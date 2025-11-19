@@ -80,24 +80,3 @@ Para que el mundo vea tu web:
 
 2.  **Configurar GitHub Pages:** Ve a Settings -> Pages, selecciona "Deploy from a branch" como source, luego elige la rama `gh-pages` y carpeta `/(root)`.
 
-3.  **Configurar Base (opcional):** Si tu repo no está en la raíz (ej. https://usuario.github.io/repo/), edita `vite.config.ts` y añade:
-
-    ```typescript
-    base: '/NOMBRE_REPO/',
-    ```
-
-    Dentro del return del defineConfig.
-
-4.  **Desplegar:** El despliegue se hace automáticamente cuando pushes a la rama main. El workflow en `.github/workflows/deploy.yml` se encarga de construir y desplegar.
-
-5.  **Configurar Router:** Como esta app usa `HashRouter`, funcionará perfectamente en GitHub Pages.
-
-### Para repositorios privados (requiere GitHub Pro o superior)
-
-Si tu repo es privado:
-
-1. Crea un Personal Access Token (PAT) en GitHub: Ve a Settings -> Developer settings -> Personal access tokens -> Tokens (classic), genera uno con permisos `repo`.
-
-2. En tu repo, ve a Settings -> Secrets and variables -> Actions, añade un nuevo secret llamado `GH_PAT` con el valor del token.
-
-3. El workflow usará automáticamente el PAT para despliegues privados.
