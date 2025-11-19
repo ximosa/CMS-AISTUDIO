@@ -42,12 +42,6 @@ export const Navbar: React.FC = () => {
                 {link.name}
               </Link>
             ))}
-            <Link
-              to="/admin"
-              className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 text-sm font-medium transition-colors"
-            >
-              Admin
-            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -80,13 +74,6 @@ export const Navbar: React.FC = () => {
                 {link.name}
               </Link>
             ))}
-            <Link
-                to="/admin"
-                onClick={() => setIsOpen(false)}
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:bg-gray-50"
-              >
-                Admin
-            </Link>
           </div>
         </div>
       )}

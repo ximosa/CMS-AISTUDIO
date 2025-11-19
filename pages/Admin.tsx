@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { BlogPost } from '../types';
-import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, X, ExternalLink, Link as LinkIcon, AlertTriangle } from 'lucide-react';
+import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, X, ExternalLink, Link as LinkIcon, AlertTriangle, Database } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { CloudinaryUploadWidget } from '../components/CloudinaryUploadWidget';
 
@@ -161,9 +161,10 @@ export const Admin: React.FC = () => {
       
     } catch (error: any) {
       console.error("Error eliminando:", error);
-      alert(`Error eliminando: ${error.message}. \n\nIMPORTANTE: Ejecuta el script 'SOLUCIÓN NUCLEAR' del README en Supabase.`);
+      alert(`Error eliminando: ${error.message}. \n\nIMPORTANTE: Ve al README y ejecuta el script SQL completo en Supabase.`);
       setStatus('error');
       setMessage('Error al eliminar.');
+      fetchPosts(); // Recargar para asegurar consistencia
     }
   };
 
@@ -203,7 +204,7 @@ export const Admin: React.FC = () => {
       setMessage('Todos los artículos han sido eliminados.');
     } catch (error: any) {
       console.error("Error deleting all:", error);
-      alert(`No se pudieron borrar los artículos: ${error.message}. \n\nSOLUCIÓN: Ve al SQL Editor en Supabase y ejecuta:\nALTER TABLE posts DISABLE ROW LEVEL SECURITY;`);
+      alert(`No se pudieron borrar los artículos: ${error.message}. \n\nSOLUCIÓN: Ve al SQL Editor en Supabase y copia el script del README (sección 1).`);
     }
   };
 
@@ -261,14 +262,23 @@ export const Admin: React.FC = () => {
             <p className="text-gray-500">Bienvenido, {userEmail}</p>
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3 justify-end">
+            <a 
+               href="https://supabase.com/dashboard/project/rmdlxyithpfdoemsajcs" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="flex items-center px-4 py-2 bg-green-600 text-white border border-green-700 rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+             >
+               <Database className="w-4 h-4 mr-2" /> Dashboard Supabase
+             </a>
+
              <a 
                href="https://console.cloudinary.com/app/c-31236b1e7b763f924293c5c43f79ff/assets/media_library/search?q=&view_mode=mosaic" 
                target="_blank" 
                rel="noopener noreferrer"
                className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-indigo-600 hover:bg-indigo-50 transition-colors shadow-sm font-medium"
              >
-               <ExternalLink className="w-4 h-4 mr-2" /> Gestión Galería Externa
+               <ExternalLink className="w-4 h-4 mr-2" /> Galería Cloudinary
              </a>
 
             <button 
