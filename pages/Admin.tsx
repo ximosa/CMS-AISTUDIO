@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { BlogPost } from '../types';
-import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, X, ExternalLink, Link as LinkIcon, AlertTriangle, Database } from 'lucide-react';
+import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, X, ExternalLink, Link as LinkIcon, Database } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { CloudinaryUploadWidget } from '../components/CloudinaryUploadWidget';
 
@@ -165,46 +165,6 @@ export const Admin: React.FC = () => {
       setStatus('error');
       setMessage('Error al eliminar.');
       fetchPosts(); // Recargar para asegurar consistencia
-    }
-  };
-
-  const handleDeleteAll = async () => {
-    const confirm1 = window.confirm('¡ATENCIÓN! ¿Estás seguro de que quieres ELIMINAR TODOS los artículos?');
-    if (!confirm1) return;
-    
-    const confirm2 = window.confirm('Esta acción borrará permanentemente todo el contenido del blog. ¿Confirmar limpieza total?');
-    if (!confirm2) return;
-
-    try {
-      // 1. Obtener todos los IDs primero (método más seguro que borrar por rango)
-      const { data: postsToDelete, error: fetchError } = await supabase
-        .from('posts')
-        .select('id');
-
-      if (fetchError) throw fetchError;
-
-      if (!postsToDelete || postsToDelete.length === 0) {
-        setMessage('No hay artículos para borrar.');
-        return;
-      }
-
-      const ids = postsToDelete.map(p => p.id);
-
-      // 2. Borrar por lista de IDs
-      const { error: deleteError } = await supabase
-        .from('posts')
-        .delete()
-        .in('id', ids);
-
-      if (deleteError) throw deleteError;
-
-      setExistingPosts([]);
-      handleCancelEdit();
-      setStatus('success');
-      setMessage('Todos los artículos han sido eliminados.');
-    } catch (error: any) {
-      console.error("Error deleting all:", error);
-      alert(`No se pudieron borrar los artículos: ${error.message}. \n\nSOLUCIÓN: Ve al SQL Editor en Supabase y copia el script del README (sección 1).`);
     }
   };
 
@@ -476,15 +436,6 @@ export const Admin: React.FC = () => {
                     ))}
                   </div>
                 )}
-              </div>
-
-              <div className="p-4 border-t border-gray-200 bg-gray-50">
-                <button 
-                  onClick={handleDeleteAll}
-                  className="w-full flex items-center justify-center px-4 py-2 bg-red-100 text-red-700 border border-red-200 rounded-md hover:bg-red-200 transition-colors text-sm font-bold"
-                >
-                  <AlertTriangle className="w-4 h-4 mr-2" /> ELIMINAR TODO
-                </button>
               </div>
             </div>
           </div>
