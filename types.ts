@@ -14,21 +14,3 @@ export interface ServiceItem {
   description: string;
   icon: React.ReactNode;
 }
-
-export interface MediaItem {
-  id: number;
-  created_at: string;
-  url: string;
-}
-
-// Extend Window interface for Cloudinary
-declare global {
-  interface Window {
-    cloudinary: {
-      createUploadWidget: (
-        options: any,
-        callback: (error: any, result: any) => void
-      ) => any;
-    };
-  }
-}

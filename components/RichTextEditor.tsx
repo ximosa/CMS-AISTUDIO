@@ -1,17 +1,17 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { 
   Bold, Italic, Heading1, Heading2, List, Link as LinkIcon, 
-  Image as ImageIcon, Code, X, Upload, Loader2, Type, 
-  Undo, Eye, Grid 
+  Image as ImageIcon, Code, X, Check, Upload, Loader2, Type, 
+  Undo, Eye 
 } from 'lucide-react';
-import { supabase } from '../supabaseClient';
-import { MediaItem } from '../types';
-import { CloudinaryUploadWidget } from './CloudinaryUploadWidget';
 
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
 }
+
+const CLOUDINARY_CLOUD_NAME = 'djjiagkho';
+const CLOUDINARY_UPLOAD_PRESET = 'blog_upload';
 
 // --- Tipos para los Modales ---
 interface LinkData {
@@ -34,56 +34,37 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
   const [savedRange, setSavedRange] = useState<Range | null>(null);
   const [showSource, setShowSource] = useState(false);
   
-  // --- Estados de Modales ---
+  // --- Estados de los Modales ---
   const [linkData, setLinkData] = useState<LinkData>({ url: '', text: '', title: '', openInNewTab: true });
   const [imageData, setImageData] = useState<ImageData>({ src: '', alt: '', title: '', width: '100%' });
-  
-  // --- Estados de Galería ---
-  const [galleryTab, setGalleryTab] = useState<'upload' | 'library'>('upload');
-  const [mediaLibrary, setMediaLibrary] = useState<MediaItem[]>([]);
-  const [loadingMedia, setLoadingMedia] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Sincronizar contenido
+  // Sincronizar contenido inicial (solo si no estamos viendo el código fuente)
   useEffect(() => {
     if (!showSource && editorRef.current && editorRef.current.innerHTML !== value) {
+      // Solo actualizar si está vacío o es drásticamente diferente para evitar saltos de cursor
       if (editorRef.current.innerHTML === '' || value === '') {
           editorRef.current.innerHTML = value;
       } else if (document.activeElement !== editorRef.current) {
+          // Si no tenemos el foco, actualizamos para reflejar cambios externos
           editorRef.current.innerHTML = value;
       }
     }
   }, [value, showSource]);
 
-  // Cargar galería al abrir el tab
-  useEffect(() => {
-    if (activeModal === 'image' && galleryTab === 'library') {
-      fetchMediaLibrary();
-    }
-  }, [activeModal, galleryTab]);
-
-  const fetchMediaLibrary = async () => {
-    setLoadingMedia(true);
-    try {
-      const { data, error } = await supabase.from('media_library').select('*').order('created_at', { ascending: false });
-      if (error) console.warn("Error cargando galería (posible RLS):", error);
-      setMediaLibrary(data || []);
-    } catch (e) {
-      console.warn("Excepción cargando galería:", e);
-    } finally {
-      setLoadingMedia(false);
-    }
-  };
-
+  // Manejar cambios en el editor visual
   const handleInput = () => {
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML);
     }
   };
 
+  // Manejar cambios en el editor de código
   const handleSourceChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onChange(e.target.value);
   };
 
+  // Guardar la selección actual para restaurarla después de cerrar el modal
   const saveSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -99,8 +80,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
     }
   };
 
+  // --- Comandos de Formato Básico ---
   const execCommand = (command: string, value: string | undefined = undefined) => {
-    if (showSource) return;
+    if (showSource) return; // No ejecutar comandos en modo código
     document.execCommand(command, false, value);
     handleInput();
     editorRef.current?.focus();
@@ -110,19 +92,25 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
     execCommand('undo');
   };
 
-  // --- Enlaces ---
+  // --- Lógica de Enlaces ---
   const openLinkModal = () => {
     if (showSource) return;
     saveSelection();
     const selection = window.getSelection();
     const selectedText = selection ? selection.toString() : '';
-    setLinkData({ url: '', text: selectedText, title: '', openInNewTab: true });
+    
+    setLinkData({
+      url: '',
+      text: selectedText,
+      title: '',
+      openInNewTab: true
+    });
     setActiveModal('link');
   };
 
   const insertLink = () => {
     restoreSelection();
-    if (!savedRange) return;
+    if (!savedRange) return; // Fallback simple
     
     const a = document.createElement('a');
     a.href = linkData.url;
@@ -137,36 +125,43 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
 
     savedRange.deleteContents();
     savedRange.insertNode(a);
+    
     handleInput();
     closeModal();
   };
 
-  // --- Imágenes ---
+  // --- Lógica de Imágenes ---
   const openImageModal = () => {
     if (showSource) return;
     saveSelection();
     setImageData({ src: '', alt: '', title: '', width: '100%' });
-    setGalleryTab('upload'); // Reset a upload
     setActiveModal('image');
   };
 
-  const handleCloudinarySuccess = async (url: string) => {
-    // 1. Setear la URL en el input del modal INMEDIATAMENTE
-    setImageData(prev => ({ ...prev, src: url }));
-    
-    // 2. Intentar guardar en Supabase, pero ignorar errores para no bloquear al usuario
-    try {
-      const { error } = await supabase.from('media_library').insert([{ url }]);
-      if (error) console.warn("No se pudo guardar en historial (RLS):", error.message);
-    } catch (e) {
-      console.warn("Error de conexión al guardar historial:", e);
-    }
-  };
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const selectFromGallery = (url: string) => {
-    setImageData(prev => ({ ...prev, src: url }));
-    // Volver a la pestaña de detalles para rellenar el ALT
-    setGalleryTab('upload');
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: formData }
+      );
+      const data = await response.json();
+      if (data.secure_url) {
+        setImageData(prev => ({ ...prev, src: data.secure_url }));
+      }
+    } catch (error) {
+      console.error('Upload error', error);
+      alert('Error subiendo imagen');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const insertImage = () => {
@@ -180,7 +175,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
     img.className = "rounded-lg my-4 shadow-sm max-w-full";
     if (imageData.width) img.style.width = imageData.width;
 
+    // Insertar imagen
     savedRange.insertNode(img);
+    // Mover el cursor después de la imagen
     savedRange.collapse(false);
     
     handleInput();
@@ -192,6 +189,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
     setSavedRange(null);
   };
 
+  // --- Renderizado de Botones de la Barra ---
   const ToolbarButton = ({ onClick, icon: Icon, title, active = false, disabled = false }: any) => (
     <button
       type="button"
@@ -210,22 +208,28 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
 
   return (
     <div className="relative border border-gray-300 rounded-lg bg-white shadow-sm flex flex-col">
-      {/* Barra */}
+      
+      {/* Barra de Herramientas */}
       <div className="flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg sticky top-0 z-10">
         <ToolbarButton onClick={handleUndo} icon={Undo} title="Deshacer" disabled={showSource} />
         <div className="w-px h-6 bg-gray-300 mx-1" />
+        
         <ToolbarButton onClick={() => execCommand('bold')} icon={Bold} title="Negrita" disabled={showSource} />
         <ToolbarButton onClick={() => execCommand('italic')} icon={Italic} title="Cursiva" disabled={showSource} />
         <div className="w-px h-6 bg-gray-300 mx-1" />
+        
         <ToolbarButton onClick={() => execCommand('formatBlock', 'H2')} icon={Heading1} title="Título H2" disabled={showSource} />
         <ToolbarButton onClick={() => execCommand('formatBlock', 'H3')} icon={Heading2} title="Título H3" disabled={showSource} />
         <ToolbarButton onClick={() => execCommand('formatBlock', 'P')} icon={Type} title="Párrafo" disabled={showSource} />
         <div className="w-px h-6 bg-gray-300 mx-1" />
+        
         <ToolbarButton onClick={() => execCommand('insertUnorderedList')} icon={List} title="Lista" disabled={showSource} />
         <ToolbarButton onClick={() => execCommand('formatBlock', 'PRE')} icon={Code} title="Bloque de Código" disabled={showSource} />
         <div className="w-px h-6 bg-gray-300 mx-1" />
+        
         <ToolbarButton onClick={openLinkModal} icon={LinkIcon} title="Insertar Enlace SEO" disabled={showSource} />
-        <ToolbarButton onClick={openImageModal} icon={ImageIcon} title="Gestor de Imágenes" disabled={showSource} />
+        <ToolbarButton onClick={openImageModal} icon={ImageIcon} title="Insertar Imagen SEO" disabled={showSource} />
+        
         <div className="flex-grow"></div>
         <div className="w-px h-6 bg-gray-300 mx-1" />
         <button
@@ -236,11 +240,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
           }`}
         >
           {showSource ? <Eye className="w-4 h-4" /> : <Code className="w-4 h-4" />}
-          {showSource ? 'Visual' : 'HTML'}
+          {showSource ? 'Ver Visual' : 'Ver Código'}
         </button>
       </div>
 
-      {/* Editor */}
+      {/* Área de Edición */}
       {showSource ? (
         <textarea
           value={value}
@@ -266,45 +270,60 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
               <h3 className="text-lg font-bold text-gray-900">Insertar Enlace SEO</h3>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5"/></button>
             </div>
+            
             <div className="space-y-4">
-              <input 
-                type="text" 
-                className="w-full border rounded px-3 py-2 text-sm text-gray-900 bg-white"
-                placeholder="https://..."
-                value={linkData.url}
-                onChange={e => setLinkData({...linkData, url: e.target.value})}
-              />
-              <input 
-                type="text" 
-                className="w-full border rounded px-3 py-2 text-sm text-gray-900 bg-white"
-                placeholder="Texto visible"
-                value={linkData.text}
-                onChange={e => setLinkData({...linkData, text: e.target.value})}
-              />
-              <input 
-                type="text" 
-                className="w-full border rounded px-3 py-2 text-sm text-gray-900 bg-white"
-                placeholder="Title (Tooltip)"
-                value={linkData.title}
-                onChange={e => setLinkData({...linkData, title: e.target.value})}
-              />
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">URL Destino</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
+                  placeholder="https://..."
+                  value={linkData.url}
+                  onChange={e => setLinkData({...linkData, url: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Texto del Enlace</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
+                  placeholder="Texto visible"
+                  value={linkData.text}
+                  onChange={e => setLinkData({...linkData, text: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Title (SEO Tooltip)</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
+                  placeholder="Descripción al pasar el mouse"
+                  value={linkData.title}
+                  onChange={e => setLinkData({...linkData, title: e.target.value})}
+                />
+              </div>
+
               <div className="flex items-center">
                 <input 
                   type="checkbox" 
+                  id="newTab"
+                  className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                   checked={linkData.openInNewTab}
                   onChange={e => setLinkData({...linkData, openInNewTab: e.target.checked})}
-                  className="mr-2"
                 />
-                <label className="text-sm text-gray-700">Abrir en nueva pestaña</label>
+                <label htmlFor="newTab" className="ml-2 text-sm text-gray-700">Abrir en nueva pestaña (Target Blank)</label>
               </div>
+
               <div className="flex justify-end gap-2 pt-2">
                 <button onClick={closeModal} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded text-sm">Cancelar</button>
                 <button 
                   onClick={insertLink}
                   disabled={!linkData.url}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  Insertar
+                  Insertar Enlace
                 </button>
               </div>
             </div>
@@ -312,130 +331,91 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
         </div>
       )}
 
-      {/* --- MODAL DE IMAGEN (Con Widget Cloudinary) --- */}
+      {/* --- MODAL DE IMAGEN --- */}
       {activeModal === 'image' && (
         <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4 rounded-lg">
-          <div className="bg-white p-0 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
-            
-            {/* Header Tabs */}
-            <div className="flex border-b bg-gray-50">
-              <button 
-                className={`px-6 py-3 font-medium text-sm ${galleryTab === 'upload' ? 'bg-white text-indigo-600 border-t-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                onClick={() => setGalleryTab('upload')}
-              >
-                <Upload className="w-4 h-4 inline mr-2"/> Subir / URL
-              </button>
-              <button 
-                className={`px-6 py-3 font-medium text-sm ${galleryTab === 'library' ? 'bg-white text-indigo-600 border-t-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
-                onClick={() => setGalleryTab('library')}
-              >
-                <Grid className="w-4 h-4 inline mr-2"/> Historial (Galería)
-              </button>
-              <div className="flex-grow flex justify-end items-center pr-4">
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5"/></button>
-              </div>
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Insertar Imagen SEO</h3>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5"/></button>
             </div>
 
-            <div className="p-6 overflow-y-auto flex-grow">
-              {galleryTab === 'upload' ? (
-                <div className="space-y-6">
-                  {/* Botón Widget Cloudinary */}
-                  <div className="border-2 border-dashed border-indigo-100 bg-indigo-50 rounded-lg p-8 flex flex-col items-center justify-center text-center">
-                    <CloudinaryUploadWidget 
-                      onUpload={handleCloudinarySuccess} 
-                      buttonText="Abrir Subidor de Cloudinary"
-                    />
-                    <p className="text-xs text-gray-500 mt-2">Formatos: JPG, PNG, WebP</p>
-                  </div>
-
-                  <div className="relative py-2">
-                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                      <div className="w-full border-t border-gray-200"></div>
-                    </div>
-                    <div className="relative flex justify-center">
-                      <span className="px-2 bg-white text-sm text-gray-500">O ingresa datos manualmente</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">URL Imagen</label>
-                      <div className="flex gap-2">
-                         <input 
-                            type="text" 
-                            className="flex-grow border rounded px-3 py-2 text-sm text-gray-900 bg-white"
-                            placeholder="https://..."
-                            value={imageData.src}
-                            onChange={e => setImageData({...imageData, src: e.target.value})}
-                          />
-                          {imageData.src && (
-                            <div className="w-10 h-10 border rounded overflow-hidden bg-gray-100 flex-shrink-0">
-                              <img src={imageData.src} className="w-full h-full object-cover" alt="preview"/>
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Alt Text (SEO)</label>
-                        <input 
-                          type="text" 
-                          className="w-full border rounded px-3 py-2 text-sm text-gray-900 bg-white"
-                          placeholder="Descripción"
-                          value={imageData.alt}
-                          onChange={e => setImageData({...imageData, alt: e.target.value})}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Title (Tooltip)</label>
-                        <input 
-                          type="text" 
-                          className="w-full border rounded px-3 py-2 text-sm text-gray-900 bg-white"
-                          placeholder="Título"
-                          value={imageData.title}
-                          onChange={e => setImageData({...imageData, title: e.target.value})}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // Tab Galería
-                <div className="h-full">
-                  {loadingMedia ? (
-                    <div className="flex justify-center py-10"><Loader2 className="animate-spin text-indigo-600"/></div>
-                  ) : mediaLibrary.length === 0 ? (
-                    <div className="text-center text-gray-500 py-10">
-                      No hay imágenes en el historial.<br/>
-                      <span className="text-xs">Nota: Si la subida falló en guardarse aquí, revisa las políticas RLS en Supabase.</span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                      {mediaLibrary.map((item) => (
+            <div className="space-y-4">
+              
+              {/* Subida de Archivo */}
+              <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4 text-center">
+                 {uploading ? (
+                   <div className="flex flex-col items-center py-2">
+                     <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-2"/>
+                     <span className="text-sm text-gray-500">Subiendo a Cloudinary...</span>
+                   </div>
+                 ) : (
+                   <>
+                    {imageData.src ? (
+                      <div className="relative mb-2">
+                        <img src={imageData.src} alt="Preview" className="h-32 mx-auto object-contain rounded bg-white border" />
                         <button 
-                          key={item.id}
-                          onClick={() => selectFromGallery(item.url)}
-                          className="group relative aspect-square border rounded-lg overflow-hidden hover:ring-2 hover:ring-indigo-500 focus:outline-none"
+                          onClick={() => setImageData({...imageData, src: ''})}
+                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 transform translate-x-1/2 -translate-y-1/2 shadow-sm"
                         >
-                          <img src={item.url} alt="" className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all"/>
+                          <X className="w-3 h-3"/>
                         </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                      </div>
+                    ) : (
+                      <label className="cursor-pointer block">
+                        <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2"/>
+                        <span className="text-sm font-medium text-indigo-600 hover:text-indigo-500">Sube una imagen</span>
+                        <span className="text-xs text-gray-500 block mt-1">o pega una URL abajo</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload}/>
+                      </label>
+                    )}
+                   </>
+                 )}
+              </div>
 
-            <div className="bg-gray-50 p-4 flex justify-end gap-2 border-t">
-               <button onClick={closeModal} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded text-sm">Cancelar</button>
-               <button 
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">URL de la Imagen</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
+                  placeholder="https://..."
+                  value={imageData.src}
+                  onChange={e => setImageData({...imageData, src: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Alt Text (SEO - Importante)</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
+                  placeholder="Descripción de la imagen para accesibilidad y Google"
+                  value={imageData.alt}
+                  onChange={e => setImageData({...imageData, alt: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Title (Tooltip)</label>
+                <input 
+                  type="text" 
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
+                  placeholder="Título visible al pasar el mouse"
+                  value={imageData.title}
+                  onChange={e => setImageData({...imageData, title: e.target.value})}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button onClick={closeModal} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded text-sm">Cancelar</button>
+                <button 
                   onClick={insertImage}
                   disabled={!imageData.src}
                   className="px-4 py-2 bg-indigo-600 text-white rounded text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
                 >
                   Insertar Imagen
                 </button>
+              </div>
             </div>
           </div>
         </div>
