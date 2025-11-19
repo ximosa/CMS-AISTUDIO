@@ -4,7 +4,7 @@ Este proyecto utiliza **React** (Frontend), **Supabase** (Base de datos y Autent
 
 ## 1. Configuración de Supabase
 
-### A. Crear la Tabla
+### A. Crear la Tabla (Inicial)
 Ve al **SQL Editor** en tu panel de Supabase y ejecuta el siguiente script para crear la tabla necesaria (si no la tienes):
 
 ```sql
@@ -23,14 +23,14 @@ create table if not exists posts (
 2. Asegúrate de que **Email** esté habilitado.
 3. Ve a **Authentication** -> **Users** y crea un nuevo usuario (este será tu admin).
 
-### C. Configurar Permisos (RLS) - **SOLUCIÓN DEFINITIVA**
-Ejecuta este script completo en el **SQL Editor**. Este script elimina primero cualquier política existente para evitar errores y luego crea permisos específicos para cada acción.
+### C. Configurar Permisos (RLS)
+Ejecuta este script completo en el **SQL Editor** para establecer los permisos correctos.
 
 ```sql
 -- 1. Habilitar RLS (Seguridad a nivel de fila)
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 
--- 2. LIMPIEZA TOTAL: Borrar todas las políticas posibles anteriores para evitar conflictos
+-- 2. LIMPIEZA TOTAL: Borrar políticas anteriores
 DROP POLICY IF EXISTS "Public posts are viewable by everyone" ON posts;
 DROP POLICY IF EXISTS "Authenticated users can manage posts" ON posts;
 DROP POLICY IF EXISTS "Enable read access for all users" ON posts;
@@ -38,50 +38,38 @@ DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON posts;
 DROP POLICY IF EXISTS "Enable update for authenticated users only" ON posts;
 DROP POLICY IF EXISTS "Enable delete for authenticated users only" ON posts;
 
--- 3. CREAR POLÍTICAS GRANULARES (Una por acción es más seguro y falla menos)
+-- 3. CREAR POLÍTICAS
+CREATE POLICY "Enable read access for all users" ON posts FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Enable insert for authenticated users only" ON posts FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Enable update for authenticated users only" ON posts FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Enable delete for authenticated users only" ON posts FOR DELETE TO authenticated USING (true);
+```
 
--- A. Permitir a TODO EL MUNDO ver los artículos (SELECT)
-CREATE POLICY "Enable read access for all users" 
-ON posts FOR SELECT 
-TO anon, authenticated 
-USING (true);
+### D. ACTUALIZACIÓN IMPORTANTE: AÑADIR SLUGS (URLs AMIGABLES)
+**Debes ejecutar este script para habilitar las URLs SEO. Si ya tienes posts, esto generará slugs para ellos automáticamente.**
 
--- B. Permitir SOLO a usuarios logueados crear artículos (INSERT)
-CREATE POLICY "Enable insert for authenticated users only" 
-ON posts FOR INSERT 
-TO authenticated 
-WITH CHECK (true);
+```sql
+-- 1. Añadir columna slug si no existe
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS slug text;
 
--- C. Permitir SOLO a usuarios logueados editar artículos (UPDATE)
-CREATE POLICY "Enable update for authenticated users only" 
-ON posts FOR UPDATE 
-TO authenticated 
-USING (true) 
-WITH CHECK (true);
+-- 2. Rellenar slugs para posts existentes (generar a partir del título)
+-- Esto convierte "Mi Título" en "mi-titulo"
+UPDATE posts 
+SET slug = lower(regexp_replace(title, '[^a-zA-Z0-9\s]', '', 'g')) 
+WHERE slug IS NULL;
 
--- D. Permitir SOLO a usuarios logueados eliminar artículos (DELETE)
-CREATE POLICY "Enable delete for authenticated users only" 
-ON posts FOR DELETE 
-TO authenticated 
-USING (true);
+UPDATE posts
+SET slug = replace(slug, ' ', '-')
+WHERE slug IS NULL OR slug LIKE '% %';
+
+-- 3. Hacer que el slug sea único (nadie puede tener el mismo)
+ALTER TABLE posts ADD CONSTRAINT posts_slug_key UNIQUE (slug);
 ```
 
 ## 2. Configuración de Cloudinary
 
-El sistema utiliza una carga "sin firmar" (Unsigned) para subir imágenes directamente desde el navegador.
-
-1. Ve a tu panel de Cloudinary -> **Settings** (Engranaje) -> **Upload**.
-2. Baja a la sección **Upload presets**.
-3. Haz clic en **Add upload preset**.
-4. **IMPORTANTE:** En "Signing Mode", selecciona **Unsigned**.
-5. En "Upload preset name", escribe: `blog_upload`.
-   * *Si pones otro nombre, debes cambiar la constante `CLOUDINARY_UPLOAD_PRESET` en los archivos `src/pages/Admin.tsx` y `src/components/RichTextEditor.tsx`*.
-6. Guarda los cambios.
-
-## 3. Variables de Entorno y Despliegue
-
-Para producción, asegúrate de configurar la URL de tu proyecto Supabase y las claves en `src/supabaseClient.ts` (o usa variables de entorno `.env` si configuras un build process compatible).
-
-### Comandos
-- `npm start`: Iniciar desarrollo.
-- `npm run build`: Crear versión de producción.
+El sistema utiliza una carga "sin firmar" (Unsigned).
+1. Ve a tu panel de Cloudinary -> **Settings** -> **Upload**.
+2. En **Upload presets**, añade uno nuevo.
+3. **IMPORTANTE:** En "Signing Mode", selecciona **Unsigned**.
+4. En "Upload preset name", escribe: `blog_upload`.

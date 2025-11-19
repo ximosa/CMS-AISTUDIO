@@ -4,6 +4,7 @@ export interface BlogPost {
   id?: number;
   created_at?: string;
   title: string;
+  slug?: string;
   summary: string;
   content: string;
   image_url: string;

@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { BlogPost } from '../types';
-import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, Upload, X, Loader2, ExternalLink } from 'lucide-react';
+import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, X, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { CloudinaryUploadWidget } from '../components/CloudinaryUploadWidget';
 
-// Configuración de Cloudinary
-const CLOUDINARY_CLOUD_NAME = 'djjiagkho';
-const CLOUDINARY_UPLOAD_PRESET = 'blog_upload'; // Asegúrate de crear este preset como "Unsigned" en Cloudinary
-
 export const Admin: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [existingPosts, setExistingPosts] = useState<BlogPost[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -19,6 +16,7 @@ export const Admin: React.FC = () => {
   
   const [post, setPost] = useState<BlogPost>({
     title: '',
+    slug: '',
     summary: '',
     content: '',
     image_url: ''
@@ -28,11 +26,22 @@ export const Admin: React.FC = () => {
   const [message, setMessage] = useState('');
   const [listLoading, setListLoading] = useState(false);
 
-  // Cargar posts existentes y usuario al montar
   useEffect(() => {
     fetchPosts();
     getUser();
   }, []);
+
+  useEffect(() => {
+    if (location.state && (location.state as any).editId && existingPosts.length > 0) {
+      const editId = (location.state as any).editId;
+      const postToEdit = existingPosts.find(p => p.id === editId);
+      
+      if (postToEdit) {
+        handleEdit(postToEdit);
+        window.history.replaceState({}, document.title);
+      }
+    }
+  }, [existingPosts, location.state]);
 
   const getUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -61,10 +70,28 @@ export const Admin: React.FC = () => {
     }
   };
 
+  const generateSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '') // Eliminar caracteres especiales
+      .replace(/[\s_-]+/g, '-') // Reemplazar espacios con guiones
+      .replace(/^-+|-+$/g, ''); // Eliminar guiones al principio y final
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPost({
-      ...post,
-      [e.target.name]: e.target.value
+    const { name, value } = e.target;
+    
+    setPost(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // Si cambiamos el título y no estamos en modo edición (o si decidimos que siempre se actualice el slug)
+      // Para seguridad UX, actualizamos el slug si es un artículo nuevo O si el slug estaba vacío
+      if (name === 'title' && (!isEditing || !prev.slug)) {
+        newData.slug = generateSlug(value);
+      }
+      
+      return newData;
     });
   };
 
@@ -75,7 +102,6 @@ export const Admin: React.FC = () => {
     });
   };
 
-  // Nuevo manejador de subida simple usando el componente reutilizable
   const handleImageUploaded = (url: string) => {
     setPost({ ...post, image_url: url });
   };
@@ -87,19 +113,20 @@ export const Admin: React.FC = () => {
   const handleEdit = (postToEdit: BlogPost) => {
     setPost({
       title: postToEdit.title,
-      summary: postToEdit.summary,
+      slug: postToEdit.slug || generateSlug(postToEdit.title), // Fallback si no tiene slug
+      summary: postToEdit.summary || '',
       content: postToEdit.content,
-      image_url: postToEdit.image_url
+      image_url: postToEdit.image_url || ''
     });
     setSelectedId(postToEdit.id || null);
     setIsEditing(true);
     setMessage('');
     setStatus('idle');
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCancelEdit = () => {
-    setPost({ title: '', summary: '', content: '', image_url: '' });
+    setPost({ title: '', slug: '', summary: '', content: '', image_url: '' });
     setIsEditing(false);
     setSelectedId(null);
     setMessage('');
@@ -110,35 +137,26 @@ export const Admin: React.FC = () => {
     if (!window.confirm('¿Estás seguro de que quieres eliminar este artículo? Esta acción no se puede deshacer.')) return;
 
     try {
-      console.log("Iniciando eliminación del post ID:", id);
-      
-      // Intentar eliminar
       const { error } = await supabase
         .from('posts')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error("Error detallado de Supabase:", error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log("Post eliminado correctamente");
-      // Recargar lista inmediatamente
       await fetchPosts(); 
       setMessage('Artículo eliminado correctamente');
       setStatus('success');
       
-      // Si estábamos editando el post que acabamos de borrar, limpiar el formulario
       if (selectedId === id) {
         handleCancelEdit();
       }
       
     } catch (error: any) {
-      console.error("Error completo en catch:", error);
-      alert(`No se pudo eliminar el artículo.\n\nDetalle del error: ${error.message || JSON.stringify(error)}\n\nSugerencia: Revisa que hayas ejecutado el script de permisos (RLS) en Supabase.`);
+      console.error("Error eliminando:", error);
+      alert(`No se pudo eliminar: ${error.message}`);
       setStatus('error');
-      setMessage('Error al eliminar. Revisa la consola para más detalles.');
+      setMessage('Error al eliminar.');
     }
   };
 
@@ -147,35 +165,42 @@ export const Admin: React.FC = () => {
     setStatus('loading');
     setMessage('');
 
+    // Validación básica de slug
+    const finalSlug = post.slug || generateSlug(post.title);
+    const payload = { ...post, slug: finalSlug };
+
     try {
       if (isEditing && selectedId) {
-        // Actualizar
         const { error } = await supabase
           .from('posts')
-          .update(post)
+          .update(payload)
           .eq('id', selectedId);
 
         if (error) throw error;
         setMessage('Artículo actualizado correctamente.');
       } else {
-        // Crear nuevo
         const { error } = await supabase
           .from('posts')
-          .insert([post]);
+          .insert([payload]);
 
         if (error) throw error;
         setMessage('Artículo publicado correctamente.');
       }
 
       setStatus('success');
-      setPost({ title: '', summary: '', content: '', image_url: '' });
+      setPost({ title: '', slug: '', summary: '', content: '', image_url: '' });
       setIsEditing(false);
       setSelectedId(null);
-      fetchPosts(); // Recargar la lista
+      fetchPosts(); 
     } catch (error: any) {
       console.error('Error saving post:', error);
       setStatus('error');
-      setMessage(`Error: ${error.message || 'Verifica los permisos en Supabase'}`);
+      // Detectar error de slug duplicado
+      if (error.message.includes('duplicate key')) {
+        setMessage('Error: El "Slug" (URL) ya existe. Por favor cámbialo.');
+      } else {
+        setMessage(`Error: ${error.message || 'Verifica los permisos en Supabase'}`);
+      }
     }
   };
 
@@ -183,7 +208,6 @@ export const Admin: React.FC = () => {
     <div className="bg-gray-50 min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Admin Header */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Panel de Administración</h1>
@@ -211,7 +235,6 @@ export const Admin: React.FC = () => {
 
         <div className="grid lg:grid-cols-3 gap-8">
           
-          {/* Columna Izquierda: Formulario */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className={`px-8 py-6 ${isEditing ? 'bg-amber-600' : 'bg-indigo-900'} transition-colors`}>
@@ -261,6 +284,22 @@ export const Admin: React.FC = () => {
                   </div>
 
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                       <LinkIcon className="w-3 h-3 mr-1"/> Slug (URL Amigable)
+                    </label>
+                    <input
+                      type="text"
+                      name="slug"
+                      value={post.slug}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50 text-gray-600 font-mono text-sm"
+                      placeholder="ej: 5-tendencias-diseno-web"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Se genera automáticamente del título, pero puedes editarlo. Debe ser único.</p>
+                  </div>
+
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Resumen (Intro)</label>
                     <input
                       type="text"
@@ -301,7 +340,6 @@ export const Admin: React.FC = () => {
                       </div>
                     )}
                     
-                    {/* Fallback a URL manual */}
                     <div className="mt-2">
                       <input
                         type="url"
@@ -343,7 +381,6 @@ export const Admin: React.FC = () => {
             </div>
           </div>
 
-          {/* Columna Derecha: Lista de Artículos */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden sticky top-24 border border-gray-200">
               <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">

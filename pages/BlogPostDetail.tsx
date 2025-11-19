@@ -1,39 +1,67 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { BlogPost } from '../types';
-import { Calendar, ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
+import { Calendar, ArrowLeft, Loader2, AlertTriangle, Edit, Trash2 } from 'lucide-react';
 
 export const BlogPostDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPost = async () => {
-      if (!id) return;
+      if (!slug) return;
       
       try {
         setLoading(true);
+        // Buscamos por slug en lugar de ID
         const { data, error } = await supabase
           .from('posts')
           .select('*')
-          .eq('id', id)
+          .eq('slug', slug)
           .single();
 
         if (error) throw error;
         setPost(data);
       } catch (err: any) {
         console.error('Error fetching post:', err);
-        setError('No se pudo cargar el artículo. Es posible que haya sido eliminado.');
+        setError('No se pudo cargar el artículo. Es posible que haya sido eliminado o la URL sea incorrecta.');
       } finally {
         setLoading(false);
       }
     };
 
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAdmin(!!session);
+    };
+
     fetchPost();
-  }, [id]);
+    checkUser();
+  }, [slug]);
+
+  const handleDelete = async () => {
+    if (!window.confirm('¿Estás TOTALMENTE seguro de borrar este artículo?')) return;
+    if (!post?.id) return;
+
+    try {
+      const { error } = await supabase.from('posts').delete().eq('id', post.id);
+      if (error) throw error;
+      navigate('/blog'); // Volver al listado tras borrar
+    } catch (error: any) {
+      alert('Error al eliminar: ' + error.message);
+    }
+  };
+
+  const handleEdit = () => {
+    if (post?.id) {
+      navigate('/admin', { state: { editId: post.id } });
+    }
+  };
 
   if (loading) {
     return (
@@ -65,9 +93,28 @@ export const BlogPostDetail: React.FC = () => {
   return (
     <div className="bg-slate-50 min-h-screen py-12">
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link to="/blog" className="inline-flex items-center text-gray-600 hover:text-indigo-600 mb-8 transition-colors">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Volver al listado
-        </Link>
+        <div className="flex justify-between items-center mb-8">
+          <Link to="/blog" className="inline-flex items-center text-gray-600 hover:text-indigo-600 transition-colors">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Volver al listado
+          </Link>
+
+          {isAdmin && (
+             <div className="flex gap-2">
+               <button 
+                 onClick={handleEdit}
+                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+               >
+                 <Edit className="w-4 h-4 mr-2" /> Editar
+               </button>
+               <button 
+                 onClick={handleDelete}
+                 className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium shadow-sm"
+               >
+                 <Trash2 className="w-4 h-4 mr-2" /> Eliminar
+               </button>
+             </div>
+          )}
+        </div>
 
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           {post.image_url && (
