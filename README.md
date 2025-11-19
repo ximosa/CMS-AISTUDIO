@@ -76,7 +76,7 @@ Sigue estos pasos para trabajar en tu ordenador:
 
 Para que el mundo vea tu web:
 
-1.  **Crear Repositorio:** Crea un repo público en GitHub y sube este código. Asegúrate de que el nombre del repo sea el que usarás en la URL.
+1.  **Crear Repositorio:** Crea un repo en GitHub y sube este código. Para despliegue gratuito, el repo debe ser **público**. Si necesitas mantenerlo privado, ver las instrucciones abajo.
 
 2.  **Configurar GitHub Pages:** Ve a Settings -> Pages, selecciona "Deploy from a branch" como source, luego elige la rama `gh-pages` y carpeta `/(root)`.
 
@@ -91,3 +91,13 @@ Para que el mundo vea tu web:
 4.  **Desplegar:** El despliegue se hace automáticamente cuando pushes a la rama main. El workflow en `.github/workflows/deploy.yml` se encarga de construir y desplegar.
 
 5.  **Configurar Router:** Como esta app usa `HashRouter`, funcionará perfectamente en GitHub Pages.
+
+### Para repositorios privados (requiere GitHub Pro o superior)
+
+Si tu repo es privado:
+
+1. Crea un Personal Access Token (PAT) en GitHub: Ve a Settings -> Developer settings -> Personal access tokens -> Tokens (classic), genera uno con permisos `repo`.
+
+2. En tu repo, ve a Settings -> Secrets and variables -> Actions, añade un nuevo secret llamado `GH_PAT` con el valor del token.
+
+3. El workflow usará automáticamente el PAT para despliegues privados.
