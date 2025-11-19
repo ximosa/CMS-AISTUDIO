@@ -99,9 +99,10 @@ export const BlogPostDetail: React.FC = () => {
               {post.summary}
             </div>
 
-            <div className="prose prose-lg prose-indigo max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed">
-              {post.content}
-            </div>
+            <div 
+              className="prose prose-lg prose-indigo max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
           </div>
         </div>
       </article>
