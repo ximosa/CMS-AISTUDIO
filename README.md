@@ -78,7 +78,7 @@ Para que el mundo vea tu web:
 
 1.  **Crear Repositorio:** Crea un repo público en GitHub y sube este código. Asegúrate de que el nombre del repo sea el que usarás en la URL.
 
-2.  **Configurar GitHub Pages:** Ve a Settings -> Pages, selecciona "Deploy from a branch" como source, luego elige la rama `gh-pages` y carpeta `/(root)`.
+2.  **Configurar GitHub Pages:** Ve a Settings -> Pages, y selecciona "GitHub Actions" como source.
 
 3.  **Configurar Base (opcional):** Si tu repo no está en la raíz (ej. https://usuario.github.io/repo/), edita `vite.config.ts` y añade:
 
