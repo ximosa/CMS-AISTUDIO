@@ -23,29 +23,47 @@ create table if not exists posts (
 2. Asegúrate de que **Email** esté habilitado.
 3. Ve a **Authentication** -> **Users** y crea un nuevo usuario (este será tu admin).
 
-### C. Configurar Permisos (RLS) - **IMPORTANTE**
-Ejecuta este script completo en el **SQL Editor**. Este script **borra** las reglas antiguas primero para evitar el error de "policy already exists" y luego crea las nuevas.
+### C. Configurar Permisos (RLS) - **SOLUCIÓN DEFINITIVA**
+Ejecuta este script completo en el **SQL Editor**. Este script elimina primero cualquier política existente para evitar errores y luego crea permisos específicos para cada acción.
 
 ```sql
--- 1. Activar seguridad RLS
-alter table posts enable row level security;
+-- 1. Habilitar RLS (Seguridad a nivel de fila)
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 
--- 2. LIMPIEZA: Borrar políticas antiguas si existen (evita el error 42710)
-drop policy if exists "Public posts are viewable by everyone" on posts;
-drop policy if exists "Authenticated users can manage posts" on posts;
+-- 2. LIMPIEZA TOTAL: Borrar todas las políticas posibles anteriores para evitar conflictos
+DROP POLICY IF EXISTS "Public posts are viewable by everyone" ON posts;
+DROP POLICY IF EXISTS "Authenticated users can manage posts" ON posts;
+DROP POLICY IF EXISTS "Enable read access for all users" ON posts;
+DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON posts;
+DROP POLICY IF EXISTS "Enable update for authenticated users only" ON posts;
+DROP POLICY IF EXISTS "Enable delete for authenticated users only" ON posts;
 
--- 3. Crear política: TODO EL MUNDO puede VER (Select)
-create policy "Public posts are viewable by everyone"
-on posts for select
-to anon, authenticated
-using ( true );
+-- 3. CREAR POLÍTICAS GRANULARES (Una por acción es más seguro y falla menos)
 
--- 4. Crear política: SOLO ADMIN puede GESTIONAR (Insert, Update, Delete)
-create policy "Authenticated users can manage posts"
-on posts for all
-to authenticated
-using ( true )
-with check ( true );
+-- A. Permitir a TODO EL MUNDO ver los artículos (SELECT)
+CREATE POLICY "Enable read access for all users" 
+ON posts FOR SELECT 
+TO anon, authenticated 
+USING (true);
+
+-- B. Permitir SOLO a usuarios logueados crear artículos (INSERT)
+CREATE POLICY "Enable insert for authenticated users only" 
+ON posts FOR INSERT 
+TO authenticated 
+WITH CHECK (true);
+
+-- C. Permitir SOLO a usuarios logueados editar artículos (UPDATE)
+CREATE POLICY "Enable update for authenticated users only" 
+ON posts FOR UPDATE 
+TO authenticated 
+USING (true) 
+WITH CHECK (true);
+
+-- D. Permitir SOLO a usuarios logueados eliminar artículos (DELETE)
+CREATE POLICY "Enable delete for authenticated users only" 
+ON posts FOR DELETE 
+TO authenticated 
+USING (true);
 ```
 
 ## 2. Configuración de Cloudinary

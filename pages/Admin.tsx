@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { BlogPost } from '../types';
-import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, Upload, X, Loader2 } from 'lucide-react';
+import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, Upload, X, Loader2, ExternalLink } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
+import { CloudinaryUploadWidget } from '../components/CloudinaryUploadWidget';
 
 // Configuración de Cloudinary
 const CLOUDINARY_CLOUD_NAME = 'djjiagkho';
@@ -15,7 +16,6 @@ export const Admin: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
   
   const [post, setPost] = useState<BlogPost>({
     title: '',
@@ -75,37 +75,9 @@ export const Admin: React.FC = () => {
     });
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadingImage(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
-    try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.secure_url) {
-        setPost({ ...post, image_url: data.secure_url });
-      } else {
-        throw new Error('Error al subir imagen a Cloudinary');
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Error al subir la imagen. Revisa tu configuración de Cloudinary.');
-    } finally {
-      setUploadingImage(false);
-    }
+  // Nuevo manejador de subida simple usando el componente reutilizable
+  const handleImageUploaded = (url: string) => {
+    setPost({ ...post, image_url: url });
   };
 
   const handleRemoveImage = () => {
@@ -135,15 +107,38 @@ export const Admin: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este artículo?')) return;
+    if (!window.confirm('¿Estás seguro de que quieres eliminar este artículo? Esta acción no se puede deshacer.')) return;
 
     try {
-      const { error } = await supabase.from('posts').delete().eq('id', id);
-      if (error) throw error;
+      console.log("Iniciando eliminación del post ID:", id);
       
-      fetchPosts(); // Recargar lista
+      // Intentar eliminar
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error("Error detallado de Supabase:", error);
+        throw error;
+      }
+      
+      console.log("Post eliminado correctamente");
+      // Recargar lista inmediatamente
+      await fetchPosts(); 
+      setMessage('Artículo eliminado correctamente');
+      setStatus('success');
+      
+      // Si estábamos editando el post que acabamos de borrar, limpiar el formulario
+      if (selectedId === id) {
+        handleCancelEdit();
+      }
+      
     } catch (error: any) {
-      alert(`Error al eliminar: ${error.message}`);
+      console.error("Error completo en catch:", error);
+      alert(`No se pudo eliminar el artículo.\n\nDetalle del error: ${error.message || JSON.stringify(error)}\n\nSugerencia: Revisa que hayas ejecutado el script de permisos (RLS) en Supabase.`);
+      setStatus('error');
+      setMessage('Error al eliminar. Revisa la consola para más detalles.');
     }
   };
 
@@ -189,17 +184,29 @@ export const Admin: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Admin Header */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Panel de Administración</h1>
             <p className="text-gray-500">Bienvenido, {userEmail}</p>
           </div>
-          <button 
-            onClick={handleLogout}
-            className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-          >
-            <LogOut className="w-4 h-4 mr-2" /> Cerrar Sesión
-          </button>
+          
+          <div className="flex gap-3">
+             <a 
+               href="https://console.cloudinary.com/app/c-31236b1e7b763f924293c5c43f79ff/assets/media_library/search?q=&view_mode=mosaic" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-indigo-600 hover:bg-indigo-50 transition-colors shadow-sm font-medium"
+             >
+               <ExternalLink className="w-4 h-4 mr-2" /> Gestión Galería Externa
+             </a>
+
+            <button 
+              onClick={handleLogout}
+              className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+            >
+              <LogOut className="w-4 h-4 mr-2" /> Cerrar Sesión
+            </button>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -272,25 +279,8 @@ export const Admin: React.FC = () => {
                     </label>
                     
                     {!post.image_url ? (
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors">
-                        {uploadingImage ? (
-                          <div className="flex flex-col items-center">
-                            <Loader2 className="h-8 w-8 text-indigo-600 animate-spin mb-2" />
-                            <span className="text-sm text-gray-500">Subiendo imagen...</span>
-                          </div>
-                        ) : (
-                          <label className="cursor-pointer flex flex-col items-center">
-                            <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                            <span className="text-sm text-gray-600 font-medium">Haz clic para subir una imagen</span>
-                            <span className="text-xs text-gray-400 mt-1">o ingresa una URL abajo</span>
-                            <input 
-                              type="file" 
-                              className="hidden" 
-                              accept="image/*"
-                              onChange={handleImageUpload}
-                            />
-                          </label>
-                        )}
+                      <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center">
+                        <CloudinaryUploadWidget onUploadSuccess={handleImageUploaded} />
                       </div>
                     ) : (
                       <div className="relative rounded-lg overflow-hidden border border-gray-200 group">
@@ -311,7 +301,7 @@ export const Admin: React.FC = () => {
                       </div>
                     )}
                     
-                    {/* Fallback a URL manual si falla la carga o prefieren enlace externo */}
+                    {/* Fallback a URL manual */}
                     <div className="mt-2">
                       <input
                         type="url"
@@ -332,7 +322,7 @@ export const Admin: React.FC = () => {
                   <div className="pt-4 flex gap-4">
                     <button
                       type="submit"
-                      disabled={status === 'loading' || uploadingImage}
+                      disabled={status === 'loading'}
                       className={`flex-1 text-white font-bold py-3 px-4 rounded-md shadow-md disabled:opacity-50 flex justify-center items-center transition-colors ${isEditing ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                     >
                       {status === 'loading' ? 'Guardando...' : (isEditing ? 'Actualizar Artículo' : 'Publicar Artículo')}
