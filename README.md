@@ -1,18 +1,8 @@
-# Configuración de Supabase para el Blog
+# Configuración del Proyecto y Supabase
 
-Para que el blog y el panel de administración funcionen correctamente con los datos proporcionados, necesitas crear la tabla en tu proyecto de Supabase.
+## 1. Configuración de Base de Datos (Tabla de Blog)
 
-## 1. Acceder a Supabase
-
-Entra a tu panel de control en Supabase (el proyecto asociado a la URL `rmdlxyithpfdoemsajcs`).
-
-## 2. Editor SQL
-
-Ve a la sección **SQL Editor** en la barra lateral izquierda y crea una "New Query".
-
-## 3. Crear la Tabla
-
-Copia y pega el siguiente código SQL para crear la tabla `posts` con la estructura necesaria:
+Entra a tu panel de control en Supabase, ve al **SQL Editor** y ejecuta este script para crear la tabla:
 
 ```sql
 create table posts (
@@ -25,44 +15,47 @@ create table posts (
 );
 ```
 
-Ejecuta la consulta (botón "Run").
+## 2. Configuración de Seguridad (Autenticación)
 
-## 4. Configurar Permisos (IMPORTANTE)
+Para que el login funcione y el admin esté protegido, debes activar la autenticación y configurar las políticas de seguridad (RLS).
 
-Dado que estamos usando la clave `anon` (pública) en la aplicación frontend, por defecto Supabase puede bloquear la escritura (creación de posts) por seguridad (Row Level Security - RLS).
+### A. Habilitar Email/Password
+1. En Supabase, ve a **Authentication** (icono de candado) -> **Providers**.
+2. Asegúrate de que **Email** esté habilitado (Enable Email provider).
 
-Para propósitos de desarrollo y prueba rápida, puedes **deshabilitar RLS** o **crear una política permisiva**.
+### B. Crear tu Usuario Administrador
+1. Ve a **Authentication** -> **Users**.
+2. Haz clic en **Add User** -> **Create New User**.
+3. Ingresa tu email y contraseña (esta será la cuenta para entrar a `/admin`).
+4. Confirma el email (si has desactivado "Confirm email" en proveedores) o simplemente usa el usuario creado.
 
-**Opción Rápida (Solo para Pruebas): Deshabilitar RLS**
+### C. Proteger la Base de Datos (RLS)
+Ahora que tenemos autenticación, vamos a proteger la tabla para que:
+- **Cualquiera (anon)** pueda LEER los posts.
+- **Solo usuarios autenticados** puedan CREAR, EDITAR o BORRAR posts.
 
-Ejecuta este SQL:
+Ve al **SQL Editor** y ejecuta este script:
 
 ```sql
-alter table posts disable row level security;
-```
+-- 1. Habilitar RLS en la tabla
+alter table posts enable row level security;
 
-**Opción Segura (Recomendada): Crear Política**
-
-Si prefieres mantener RLS activado, debes crear una política que permita insertar y leer a "anon".
-
-```sql
--- Permitir lectura a todos
+-- 2. Permitir lectura pública (cualquiera puede ver el blog)
 create policy "Public posts are viewable by everyone"
 on posts for select
-to anon
+to anon, authenticated
 using ( true );
 
--- Permitir inserción a todos (CUIDADO: Esto permite a cualquiera crear posts)
-create policy "Anyone can insert posts"
-on posts for insert
-to anon
+-- 3. Permitir todo (Insert/Update/Delete) SOLO a usuarios autenticados
+create policy "Authenticated users can manage posts"
+on posts for all
+to authenticated
+using ( true )
 with check ( true );
 ```
 
-## 5. Producción
+## 3. Despliegue en Producción
 
-Para poner esto en producción:
-
-1.  Genera el build de la aplicación: `npm run build`.
-2.  Sube la carpeta `dist` (o `build`) a tu hosting favorito (Vercel, Netlify, etc.).
-3.  Asegúrate de que las variables de entorno (claves de Supabase) estén configuradas en el panel de tu hosting, en lugar de estar harcodeadas en `supabaseClient.ts`.
+1. Ejecuta `npm run build` para generar la carpeta de distribución.
+2. Sube los archivos a tu hosting.
+3. Asegúrate de configurar las variables de entorno en el hosting si decides no incluirlas directamente en el código en el futuro.

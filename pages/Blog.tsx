@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { BlogPost } from '../types';
 import { Calendar, ArrowRight, Loader2 } from 'lucide-react';
@@ -83,9 +84,12 @@ export const Blog: React.FC = () => {
                   <p className="text-gray-600 mb-4 line-clamp-3 flex-1">
                     {post.summary}
                   </p>
-                  <button className="text-indigo-600 font-semibold hover:text-indigo-800 flex items-center mt-auto">
+                  <Link 
+                    to={`/blog/${post.id}`} 
+                    className="text-indigo-600 font-semibold hover:text-indigo-800 flex items-center mt-auto"
+                  >
                     Leer más <ArrowRight className="ml-1 h-4 w-4" />
-                  </button>
+                  </Link>
                 </div>
               </article>
             ))}
