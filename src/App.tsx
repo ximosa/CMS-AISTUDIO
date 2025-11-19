@@ -23,6 +23,7 @@ const ScrollToTop = () => {
 };
 
 const App: React.FC = () => {
+  console.log('App component rendered');
   return (
     <HashRouter>
       <ScrollToTop />
