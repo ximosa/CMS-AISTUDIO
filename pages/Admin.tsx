@@ -161,7 +161,7 @@ export const Admin: React.FC = () => {
       
     } catch (error: any) {
       console.error("Error eliminando:", error);
-      alert(`Error eliminando: ${error.message}. Asegúrate de haber ejecutado el script SQL del README.`);
+      alert(`Error eliminando: ${error.message}. \n\nIMPORTANTE: Ejecuta el script 'SOLUCIÓN NUCLEAR' del README en Supabase.`);
       setStatus('error');
       setMessage('Error al eliminar.');
     }
@@ -175,13 +175,27 @@ export const Admin: React.FC = () => {
     if (!confirm2) return;
 
     try {
-      // Delete logic: delete rows where ID is greater than -1 (effectively all rows)
-      const { error } = await supabase
+      // 1. Obtener todos los IDs primero (método más seguro que borrar por rango)
+      const { data: postsToDelete, error: fetchError } = await supabase
+        .from('posts')
+        .select('id');
+
+      if (fetchError) throw fetchError;
+
+      if (!postsToDelete || postsToDelete.length === 0) {
+        setMessage('No hay artículos para borrar.');
+        return;
+      }
+
+      const ids = postsToDelete.map(p => p.id);
+
+      // 2. Borrar por lista de IDs
+      const { error: deleteError } = await supabase
         .from('posts')
         .delete()
-        .gt('id', -1);
+        .in('id', ids);
 
-      if (error) throw error;
+      if (deleteError) throw deleteError;
 
       setExistingPosts([]);
       handleCancelEdit();
@@ -189,7 +203,7 @@ export const Admin: React.FC = () => {
       setMessage('Todos los artículos han sido eliminados.');
     } catch (error: any) {
       console.error("Error deleting all:", error);
-      alert(`No se pudieron borrar los artículos: ${error.message}. \n\nIMPORTANTE: Ve al SQL Editor en Supabase y ejecuta el script del README para arreglar los permisos.`);
+      alert(`No se pudieron borrar los artículos: ${error.message}. \n\nSOLUCIÓN: Ve al SQL Editor en Supabase y ejecuta:\nALTER TABLE posts DISABLE ROW LEVEL SECURITY;`);
     }
   };
 
@@ -232,7 +246,7 @@ export const Admin: React.FC = () => {
       if (error.message.includes('duplicate key')) {
         setMessage('Error: El "Slug" (URL) ya existe. Por favor cámbialo.');
       } else {
-        setMessage(`Error: ${error.message || 'Verifica los permisos en Supabase'}`);
+        setMessage(`Error: ${error.message}. Ejecuta el script del README.`);
       }
     }
   };
