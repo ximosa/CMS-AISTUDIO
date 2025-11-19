@@ -66,7 +66,7 @@ Sigue estos pasos para trabajar en tu ordenador:
     ```
 4.  **Iniciar Servidor:**
     ```bash
-    npm start
+    npm run dev
     ```
 5.  **Ver:** Abre `http://localhost:3000` en tu navegador.
 
@@ -76,31 +76,18 @@ Sigue estos pasos para trabajar en tu ordenador:
 
 Para que el mundo vea tu web:
 
-1.  **Crear Repositorio:** Crea un repo público en GitHub y sube este código.
-2.  **Instalar herramienta de despliegue:**
-    En tu terminal local ejecuta:
-    ```bash
-    npm install --save-dev gh-pages
-    ```
-3.  **Editar `package.json`:**
-    Abre el archivo `package.json` y añade estas 3 cosas:
+1.  **Crear Repositorio:** Crea un repo público en GitHub y sube este código. Asegúrate de que el nombre del repo sea el que usarás en la URL.
 
-    *Al principio del archivo:*
-    ```json
-    "homepage": "https://TU_USUARIO_GITHUB.github.io/NOMBRE_REPO",
+2.  **Configurar GitHub Pages:** Ve a Settings -> Pages, y selecciona "GitHub Actions" como source.
+
+3.  **Configurar Base (opcional):** Si tu repo no está en la raíz (ej. https://usuario.github.io/repo/), edita `vite.config.ts` y añade:
+
+    ```typescript
+    base: '/NOMBRE_REPO/',
     ```
 
-    *Dentro de "scripts":*
-    ```json
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
-    ```
+    Dentro del return del defineConfig.
 
-4.  **Desplegar:**
-    Ejecuta en la terminal:
-    ```bash
-    npm run deploy
-    ```
+4.  **Desplegar:** El despliegue se hace automáticamente cuando pushes a la rama main. El workflow en `.github/workflows/deploy.yml` se encarga de construir y desplegar.
 
-5.  **Configurar Router:**
-    Como esta app usa `HashRouter` (visible en `App.tsx`), funcionará perfectamente en GitHub Pages sin necesidad de configuraciones extra.
+5.  **Configurar Router:** Como esta app usa `HashRouter`, funcionará perfectamente en GitHub Pages.
