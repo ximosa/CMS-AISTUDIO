@@ -35,16 +35,24 @@ export const Contact: React.FC = () => {
               
               <div className="space-y-6">
                 <div className="flex items-center space-x-4">
-                  <Phone className="h-6 w-6 text-indigo-300" />
-                  <span>+34 123 456 789</span>
+                  <Mail className="h-6 w-6 text-indigo-300" />
+                  <span>info@webgae.com</span>
                 </div>
                 <div className="flex items-center space-x-4">
                   <Mail className="h-6 w-6 text-indigo-300" />
-                  <span>contacto@devagency.com</span>
+                  <span>ximosa@gmail.com</span>
                 </div>
                 <div className="flex items-center space-x-4">
                   <MapPin className="h-6 w-6 text-indigo-300" />
-                  <span>Calle Tecnología 123, Madrid</span>
+                  <span>España, Valencia</span>
+                </div>
+                <div className="space-y-2">
+                  <a href="https://forms.gle/pCq7uu95ZrdHd6N26" target="_blank" rel="noopener noreferrer" className="block text-indigo-200 hover:text-white transition">
+                    Usar un Formulario Seguro desde aqui
+                  </a>
+                  <a href="https://wa.me/34667590554" target="_blank" rel="noopener noreferrer" className="block text-indigo-200 hover:text-white transition">
+                    Hablamos por WhatsApp
+                  </a>
                 </div>
               </div>
             </div>
@@ -95,8 +103,8 @@ export const Contact: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mensaje</label>
                   <textarea rows={4} required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-white text-gray-900"></textarea>
                 </div>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={formStatus === 'submitting'}
                   className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300 flex items-center justify-center disabled:opacity-50"
                 >
