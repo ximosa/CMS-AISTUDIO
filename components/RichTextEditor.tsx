@@ -63,9 +63,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
 
   const fetchMediaLibrary = async () => {
     setLoadingMedia(true);
-    const { data } = await supabase.from('media_library').select('*').order('created_at', { ascending: false });
-    setMediaLibrary(data || []);
-    setLoadingMedia(false);
+    try {
+      const { data, error } = await supabase.from('media_library').select('*').order('created_at', { ascending: false });
+      if (error) console.warn("Error cargando galería (posible RLS):", error);
+      setMediaLibrary(data || []);
+    } catch (e) {
+      console.warn("Excepción cargando galería:", e);
+    } finally {
+      setLoadingMedia(false);
+    }
   };
 
   const handleInput = () => {
@@ -145,11 +151,16 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
   };
 
   const handleCloudinarySuccess = async (url: string) => {
-    // 1. Setear la URL en el input del modal
+    // 1. Setear la URL en el input del modal INMEDIATAMENTE
     setImageData(prev => ({ ...prev, src: url }));
     
-    // 2. Guardar en Supabase "historial"
-    await supabase.from('media_library').insert([{ url }]);
+    // 2. Intentar guardar en Supabase, pero ignorar errores para no bloquear al usuario
+    try {
+      const { error } = await supabase.from('media_library').insert([{ url }]);
+      if (error) console.warn("No se pudo guardar en historial (RLS):", error.message);
+    } catch (e) {
+      console.warn("Error de conexión al guardar historial:", e);
+    }
   };
 
   const selectFromGallery = (url: string) => {
@@ -334,7 +345,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
                       onUpload={handleCloudinarySuccess} 
                       buttonText="Abrir Subidor de Cloudinary"
                     />
-                    <p className="text-xs text-gray-500 mt-2">Soporta: Local, URL, Cámara, Unsplash</p>
+                    <p className="text-xs text-gray-500 mt-2">Formatos: JPG, PNG, WebP</p>
                   </div>
 
                   <div className="relative py-2">
@@ -394,7 +405,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
                   {loadingMedia ? (
                     <div className="flex justify-center py-10"><Loader2 className="animate-spin text-indigo-600"/></div>
                   ) : mediaLibrary.length === 0 ? (
-                    <div className="text-center text-gray-500 py-10">No hay imágenes en el historial. Sube una primero.</div>
+                    <div className="text-center text-gray-500 py-10">
+                      No hay imágenes en el historial.<br/>
+                      <span className="text-xs">Nota: Si la subida falló en guardarse aquí, revisa las políticas RLS en Supabase.</span>
+                    </div>
                   ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
                       {mediaLibrary.map((item) => (

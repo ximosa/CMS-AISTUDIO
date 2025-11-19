@@ -61,10 +61,15 @@ export const Admin: React.FC = () => {
   };
 
   const handleImageSuccess = async (url: string) => {
-    // Actualizar estado local
+    // Actualizar estado local inmediatamente
     setPost({ ...post, image_url: url });
-    // Guardar en historial de galería
-    await supabase.from('media_library').insert([{ url }]);
+    
+    // Intentar guardar en historial de galería (si falla por RLS, no bloquear)
+    try {
+      await supabase.from('media_library').insert([{ url }]);
+    } catch (e) {
+      console.warn("Error guardando en media_library (posible RLS)", e);
+    }
   };
 
   const handleRemoveImage = () => {

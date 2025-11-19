@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Image as ImageIcon } from 'lucide-react';
 
 interface CloudinaryUploadWidgetProps {
   onUpload: (url: string) => void;
@@ -16,75 +16,79 @@ export const CloudinaryUploadWidget: React.FC<CloudinaryUploadWidgetProps> = ({
   buttonText = "Subir Imagen",
   className = ""
 }) => {
-  const cloudinaryRef = useRef<any>(null);
   const widgetRef = useRef<any>(null);
 
-  useEffect(() => {
-    if (window.cloudinary) {
-      cloudinaryRef.current = window.cloudinary;
-      widgetRef.current = cloudinaryRef.current.createUploadWidget(
-        {
-          cloudName: CLOUD_NAME,
-          uploadPreset: UPLOAD_PRESET,
-          apiKey: API_KEY,
-          sources: ['local', 'url', 'camera', 'unsplash'], // Fuentes permitidas
-          multiple: false,
-          defaultSource: "local",
-          styles: {
-            palette: {
-              window: "#FFFFFF",
-              windowBorder: "#90A0B3",
-              tabIcon: "#4F46E5", // Indigo-600 matches site
-              menuIcons: "#5A6169",
-              textDark: "#000000",
-              textLight: "#FFFFFF",
-              link: "#4F46E5",
-              action: "#FF620C",
-              inactiveTabIcon: "#0E2F5A",
-              error: "#F44235",
-              inProgress: "#4F46E5",
-              complete: "#20B832",
-              sourceBg: "#F4F5F7"
-            }
-          },
-          language: "es", // Idioma español
-          text: {
-            es: {
-              or: "o",
-              back: "Atrás",
-              advanced: "Avanzado",
-              close: "Cerrar",
-              no_results: "Sin resultados",
-              search_placeholder: "Buscar archivos",
-              menu: {
-                files: "Mis Archivos",
-                web: "Dirección Web",
-                camera: "Cámara"
-              },
-              local: {
-                browse: "Explorar",
-                dd_title_single: "Arrastra y suelta una imagen aquí",
-              }
-            }
+  const openWidget = () => {
+    if (!window.cloudinary) {
+      alert("El script de Cloudinary aún no ha cargado. Espera un momento o recarga la página.");
+      return;
+    }
+
+    // Crear el widget solo cuando se hace click, para asegurar que la configuración es fresca
+    // y evitar problemas de inicialización en el montaje del componente.
+    widgetRef.current = window.cloudinary.createUploadWidget(
+      {
+        cloudName: CLOUD_NAME,
+        uploadPreset: UPLOAD_PRESET,
+        apiKey: API_KEY,
+        // IMPORTANTE: Quitamos 'unsplash' y 'camera' para reducir fallos si no están configurados en el dashboard
+        sources: ['local', 'url'], 
+        multiple: false,
+        maxFiles: 1,
+        defaultSource: "local",
+        zIndex: 99999, // Asegurar que esté por encima de todo
+        styles: {
+          palette: {
+            window: "#FFFFFF",
+            sourceBg: "#F4F5F7",
+            windowBorder: "#90A0B3",
+            tabIcon: "#4F46E5",
+            inactiveTabIcon: "#69778A",
+            menuIcons: "#5A6169",
+            link: "#4F46E5",
+            action: "#4F46E5",
+            inProgress: "#4F46E5",
+            complete: "#20B832",
+            error: "#F44235",
+            textDark: "#000000",
+            textLight: "#FFFFFF"
           }
         },
-        (error: any, result: any) => {
-          if (!error && result && result.event === "success") {
-            // Cuando la carga es exitosa
-            const secureUrl = result.info.secure_url;
-            onUpload(secureUrl);
+        language: "es",
+        text: {
+          es: {
+            or: "o",
+            back: "Atrás",
+            close: "Cerrar",
+            menu: {
+              files: "Subir Archivo",
+              web: "URL Web"
+            },
+            local: {
+              browse: "Seleccionar archivo",
+              dd_title_single: "Arrastra una imagen aquí",
+            }
           }
         }
-      );
-    }
-  }, [onUpload]);
+      },
+      (error: any, result: any) => {
+        if (error) {
+          // Logueamos el error pero no bloqueamos la UI con alertas molestas a menos que sea crítico
+          console.error("Cloudinary Error:", error);
+          if (typeof error === 'string' && error.includes('unsigned')) {
+              alert("Error crítico: El Preset de Cloudinary no está en modo 'Unsigned'.");
+          }
+          return;
+        }
+        
+        if (result && result.event === "success") {
+          console.log("Imagen subida con éxito:", result.info.secure_url);
+          onUpload(result.info.secure_url);
+        }
+      }
+    );
 
-  const openWidget = () => {
-    if (widgetRef.current) {
-      widgetRef.current.open();
-    } else {
-      alert("El widget de Cloudinary no se ha cargado. Revisa tu conexión.");
-    }
+    widgetRef.current.open();
   };
 
   return (
