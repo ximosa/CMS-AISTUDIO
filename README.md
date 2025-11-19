@@ -14,7 +14,8 @@ create table if not exists posts (
   title text not null,
   summary text,
   content text not null,
-  image_url text
+  image_url text,
+  slug text
 );
 ```
 
@@ -23,46 +24,47 @@ create table if not exists posts (
 2. Asegúrate de que **Email** esté habilitado.
 3. Ve a **Authentication** -> **Users** y crea un nuevo usuario (este será tu admin).
 
-### C. Configurar Permisos (RLS)
-Ejecuta este script completo en el **SQL Editor** para establecer los permisos correctos.
+### C. LLAVE MAESTRA: Configurar Permisos (SOLUCIÓN DEFINITIVA A ERRORES DE BORRADO)
+**IMPORTANTE:** Copia y pega este script exacto en el **SQL Editor** y ejecútalo. Esto borrará cualquier regla vieja que esté bloqueando tus acciones y creará una regla de "Admin Supremo".
 
 ```sql
--- 1. Habilitar RLS (Seguridad a nivel de fila)
+-- 1. Habilitar seguridad
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 
--- 2. LIMPIEZA TOTAL: Borrar políticas anteriores
+-- 2. BORRAR TODAS LAS REGLAS VIEJAS (Para evitar errores "policy already exists")
 DROP POLICY IF EXISTS "Public posts are viewable by everyone" ON posts;
 DROP POLICY IF EXISTS "Authenticated users can manage posts" ON posts;
 DROP POLICY IF EXISTS "Enable read access for all users" ON posts;
 DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON posts;
 DROP POLICY IF EXISTS "Enable update for authenticated users only" ON posts;
 DROP POLICY IF EXISTS "Enable delete for authenticated users only" ON posts;
+DROP POLICY IF EXISTS "Allow public read access" ON posts;
+DROP POLICY IF EXISTS "Allow admin full access" ON posts;
 
--- 3. CREAR POLÍTICAS
-CREATE POLICY "Enable read access for all users" ON posts FOR SELECT TO anon, authenticated USING (true);
-CREATE POLICY "Enable insert for authenticated users only" ON posts FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Enable update for authenticated users only" ON posts FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Enable delete for authenticated users only" ON posts FOR DELETE TO authenticated USING (true);
+-- 3. REGLA 1: TODO EL MUNDO (ANON) PUEDE LEER
+CREATE POLICY "Allow public read access"
+ON posts FOR SELECT
+TO anon, authenticated
+USING (true);
+
+-- 4. REGLA 2: ADMIN (AUTENTICADO) PUEDE HACER TODO (BORRAR, EDITAR, CREAR)
+-- Esta es la clave para que funcione el borrado
+CREATE POLICY "Allow admin full access"
+ON posts FOR ALL
+TO authenticated
+USING (true)
+WITH CHECK (true);
 ```
 
-### D. ACTUALIZACIÓN IMPORTANTE: AÑADIR SLUGS (URLs AMIGABLES)
-**Debes ejecutar este script para habilitar las URLs SEO. Si ya tienes posts, esto generará slugs para ellos automáticamente.**
+### D. URLs AMIGABLES (SLUGS)
+Si te falta la columna slug o quieres regenerarlos:
 
 ```sql
--- 1. Añadir columna slug si no existe
+-- Asegurar que la columna existe
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS slug text;
 
--- 2. Rellenar slugs para posts existentes (generar a partir del título)
--- Esto convierte "Mi Título" en "mi-titulo"
-UPDATE posts 
-SET slug = lower(regexp_replace(title, '[^a-zA-Z0-9\s]', '', 'g')) 
-WHERE slug IS NULL;
-
-UPDATE posts
-SET slug = replace(slug, ' ', '-')
-WHERE slug IS NULL OR slug LIKE '% %';
-
--- 3. Hacer que el slug sea único (nadie puede tener el mismo)
+-- Hacer el slug único
+ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_slug_key;
 ALTER TABLE posts ADD CONSTRAINT posts_slug_key UNIQUE (slug);
 ```
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { BlogPost } from '../types';
-import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, X, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, X, ExternalLink, Link as LinkIcon, AlertTriangle } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { CloudinaryUploadWidget } from '../components/CloudinaryUploadWidget';
 
@@ -137,14 +137,21 @@ export const Admin: React.FC = () => {
     if (!window.confirm('¿Estás seguro de que quieres eliminar este artículo? Esta acción no se puede deshacer.')) return;
 
     try {
+      // Optimistic UI update
+      const previousPosts = [...existingPosts];
+      setExistingPosts(existingPosts.filter(p => p.id !== id));
+
       const { error } = await supabase
         .from('posts')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        // Rollback if error
+        setExistingPosts(previousPosts);
+        throw error;
+      }
       
-      await fetchPosts(); 
       setMessage('Artículo eliminado correctamente');
       setStatus('success');
       
@@ -154,9 +161,35 @@ export const Admin: React.FC = () => {
       
     } catch (error: any) {
       console.error("Error eliminando:", error);
-      alert(`No se pudo eliminar: ${error.message}`);
+      alert(`Error eliminando: ${error.message}. Asegúrate de haber ejecutado el script SQL del README.`);
       setStatus('error');
       setMessage('Error al eliminar.');
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    const confirm1 = window.confirm('¡ATENCIÓN! ¿Estás seguro de que quieres ELIMINAR TODOS los artículos?');
+    if (!confirm1) return;
+    
+    const confirm2 = window.confirm('Esta acción borrará permanentemente todo el contenido del blog. ¿Confirmar limpieza total?');
+    if (!confirm2) return;
+
+    try {
+      // Delete logic: delete rows where ID is greater than -1 (effectively all rows)
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .gt('id', -1);
+
+      if (error) throw error;
+
+      setExistingPosts([]);
+      handleCancelEdit();
+      setStatus('success');
+      setMessage('Todos los artículos han sido eliminados.');
+    } catch (error: any) {
+      console.error("Error deleting all:", error);
+      alert(`No se pudieron borrar los artículos: ${error.message}. \n\nIMPORTANTE: Ve al SQL Editor en Supabase y ejecuta el script del README para arreglar los permisos.`);
     }
   };
 
@@ -382,12 +415,12 @@ export const Admin: React.FC = () => {
           </div>
 
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden sticky top-24 border border-gray-200">
-              <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
-                <h2 className="font-bold text-gray-700">Artículos Publicados ({existingPosts.length})</h2>
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden sticky top-24 border border-gray-200 flex flex-col h-[calc(100vh-8rem)]">
+              <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="font-bold text-gray-700">Artículos ({existingPosts.length})</h2>
               </div>
               
-              <div className="max-h-[800px] overflow-y-auto bg-white">
+              <div className="flex-1 overflow-y-auto bg-white">
                 {listLoading ? (
                   <p className="p-4 text-center text-gray-500">Cargando...</p>
                 ) : existingPosts.length === 0 ? (
@@ -419,6 +452,15 @@ export const Admin: React.FC = () => {
                     ))}
                   </div>
                 )}
+              </div>
+
+              <div className="p-4 border-t border-gray-200 bg-gray-50">
+                <button 
+                  onClick={handleDeleteAll}
+                  className="w-full flex items-center justify-center px-4 py-2 bg-red-100 text-red-700 border border-red-200 rounded-md hover:bg-red-200 transition-colors text-sm font-bold"
+                >
+                  <AlertTriangle className="w-4 h-4 mr-2" /> ELIMINAR TODO
+                </button>
               </div>
             </div>
           </div>
