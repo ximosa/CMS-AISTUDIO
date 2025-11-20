@@ -44,7 +44,66 @@ export const BlogPostDetail: React.FC = () => {
 
     fetchPost();
     checkUser();
+    fetchPost();
+    checkUser();
   }, [slug]);
+
+  // Efecto para añadir botones de copia a los bloques de código
+  useEffect(() => {
+    if (!post?.content) return;
+
+    // Esperar un ciclo para asegurar que el DOM se ha actualizado con dangerouslySetInnerHTML
+    const timer = setTimeout(() => {
+      const articleContent = document.getElementById('article-content');
+      if (!articleContent) return;
+
+      const preBlocks = articleContent.querySelectorAll('pre');
+
+      preBlocks.forEach((pre) => {
+        // Verificar si ya tiene un botón de copia para evitar duplicados
+        if (pre.parentNode && (pre.parentNode as HTMLElement).classList.contains('code-block-wrapper')) return;
+
+        // Crear wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-block-wrapper relative group';
+
+        // Insertar wrapper antes del pre y mover el pre dentro
+        pre.parentNode?.insertBefore(wrapper, pre);
+        wrapper.appendChild(pre);
+
+        // Crear botón
+        const button = document.createElement('button');
+        button.className = 'absolute top-2 right-2 p-2 rounded-md bg-slate-700/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-700 focus:opacity-100';
+        button.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        `;
+        button.title = 'Copiar código';
+
+        // Evento click
+        button.addEventListener('click', async () => {
+          const code = pre.querySelector('code')?.innerText || pre.innerText;
+          try {
+            await navigator.clipboard.writeText(code);
+
+            // Feedback visual temporal
+            const originalHTML = button.innerHTML;
+            button.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check text-green-400"><path d="M20 6 9 17l-5-5"/></svg>
+            `;
+            setTimeout(() => {
+              button.innerHTML = originalHTML;
+            }, 2000);
+          } catch (err) {
+            console.error('Error al copiar:', err);
+          }
+        });
+
+        wrapper.appendChild(button);
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [post?.content]);
 
   const handleDelete = async () => {
     if (!window.confirm('¿Estás TOTALMENTE seguro de borrar este artículo?')) return;
