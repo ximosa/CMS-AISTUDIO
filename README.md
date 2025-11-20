@@ -82,7 +82,21 @@ Para que el mundo vea tu web:
 
 ---
 
-## 5. Configuración del Asistente de IA (Gemini)
+## 5. Scripts Adicionales
+
+### Generar Sitemap
+
+Para mejorar el SEO, la aplicación genera un `sitemap.xml` dinámicamente. Debes ejecutar este script cada vez que añadas, edites o elimines un post del blog para mantener el sitemap actualizado.
+
+```bash
+npm run sitemap
+```
+
+Este comando creará o actualizará el archivo `public/sitemap.xml`.
+
+---
+
+## 6. Configuración del Asistente de IA (Gemini)
 
 Para que el asistente de IA en el panel de administración funcione, necesitas una clave de API de Google Gemini.
 
