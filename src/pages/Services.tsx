@@ -17,7 +17,7 @@ export const Services: React.FC = () => {
   const services = [
     {
       title: "Desarrollo Web a Medida",
-      description: "Creamos sitios web únicos adaptados a las necesidades específicas de tu marca, utilizando las últimas tecnologías como React y Next.js.",
+      description: "Creo sitios web únicos adaptados a las necesidades específicas de tu marca, utilizando las últimas tecnologías como React y Next.js.",
       icon: <Code className="w-7 h-7" />
     },
     {
@@ -27,44 +27,49 @@ export const Services: React.FC = () => {
     },
     {
       title: "Backend & API",
-      description: "Arquitecturas de servidor escalables y bases de datos optimizadas. Desarrollo de APIs RESTful y GraphQL para alimentar tus aplicaciones.",
+      description: "Desarrollo arquitecturas de servidor escalables y bases de datos optimizadas. Creo APIs RESTful y GraphQL para alimentar tus aplicaciones.",
       icon: <Database className="w-7 h-7" />
     },
     {
       title: "SEO & Analytics",
-      description: "Optimizamos tu presencia online para mejorar el ranking en Google. Implementamos herramientas de análisis para medir el rendimiento.",
+      description: "Optimizo tu presencia online para mejorar el ranking en Google. Implemento herramientas de análisis para medir el rendimiento.",
       icon: <BarChart className="w-7 h-7" />
     },
     {
       title: "Desarrollo Móvil",
-      description: "Aplicaciones híbridas y nativas que ofrecen una experiencia de usuario fluida en iOS y Android.",
+      description: "Desarrollo aplicaciones híbridas y nativas que ofrecen una experiencia de usuario fluida en iOS y Android.",
       icon: <Smartphone className="w-7 h-7" />
     },
     {
       title: "Hosting & Mantenimiento",
-      description: "Nos encargamos de que tu sitio esté siempre online, seguro y actualizado. Copias de seguridad automáticas y monitoreo 24/7.",
+      description: "Me encargo de que tu sitio esté siempre online, seguro y actualizado. Ofrezco copias de seguridad automáticas y monitoreo 24/7.",
       icon: <Globe className="w-7 h-7" />
     }
   ];
 
   return (
-    <div className="bg-slate-50 min-h-screen py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
-            Nuestros Servicios
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Ofrecemos soluciones tecnológicas integrales para impulsar tu negocio en el mundo digital.
-          </p>
-        </div>
+    <>
+      <title>Servicios de Desarrollo Web | Joaquín</title>
+      <meta name="description" content="Ofrezco servicios de desarrollo web a medida, e-commerce, backend, SEO, y más. Soluciones tecnológicas para impulsar tu negocio." />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service, index) => (
-            <ServiceCard key={index} {...service} />
-          ))}
+      <div className="bg-slate-50 min-h-screen py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
+              Mis Servicios
+            </h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Ofrezco soluciones tecnológicas integrales para impulsar tu proyecto en el mundo digital.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {services.map((service, index) => (
+              <ServiceCard key={index} {...service} />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };

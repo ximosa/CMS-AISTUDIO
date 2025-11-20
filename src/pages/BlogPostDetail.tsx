@@ -90,69 +90,93 @@ export const BlogPostDetail: React.FC = () => {
     );
   }
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "description": post.summary,
+    "image": post.image_url || "https://ximosa.github.io/CMS-AISTUDIO/images/joaquin.png", // Fallback image
+    "author": {
+      "@type": "Person",
+      "name": "Joaquín"
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "Joaquín"
+    },
+    "datePublished": post.created_at,
+    "dateModified": post.created_at // Assuming no separate modified date
+  };
+
   return (
-    <div className="bg-slate-50 min-h-screen py-12">
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <Link to="/blog" className="inline-flex items-center text-gray-600 hover:text-indigo-600 transition-colors">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Volver al listado
-          </Link>
+    <>
+      <title>{`${post.title} | Blog de Joaquín`}</title>
+      <meta name="description" content={post.summary} />
+      <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
 
-          {isAdmin && (
-             <div className="flex gap-2">
-               <button 
-                 onClick={handleEdit}
-                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
-               >
-                 <Edit className="w-4 h-4 mr-2" /> Editar
-               </button>
-               <button 
-                 onClick={handleDelete}
-                 className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium shadow-sm"
-               >
-                 <Trash2 className="w-4 h-4 mr-2" /> Eliminar
-               </button>
-             </div>
-          )}
-        </div>
+      <div className="bg-slate-50 min-h-screen py-12">
+        <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <Link to="/blog" className="inline-flex items-center text-gray-600 hover:text-indigo-600 transition-colors">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Volver al listado
+            </Link>
 
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          {post.image_url && (
-            <div className="w-full h-64 md:h-96 overflow-hidden">
-              <img 
-                src={post.image_url} 
-                alt={post.title} 
-                className="w-full h-full object-cover"
+            {isAdmin && (
+               <div className="flex gap-2">
+                 <button 
+                   onClick={handleEdit}
+                   className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                 >
+                   <Edit className="w-4 h-4 mr-2" /> Editar
+                 </button>
+                 <button 
+                   onClick={handleDelete}
+                   className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm font-medium shadow-sm"
+                 >
+                   <Trash2 className="w-4 h-4 mr-2" /> Eliminar
+                 </button>
+               </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            {post.image_url && (
+              <div className="w-full h-64 md:h-96 overflow-hidden">
+                <img 
+                  src={post.image_url} 
+                  alt={post.title} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
+            <div className="p-8 md:p-12">
+              <div className="flex items-center text-sm text-indigo-600 font-medium mb-4">
+                <Calendar className="h-4 w-4 mr-2" />
+                {new Date(post.created_at || '').toLocaleDateString('es-ES', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </div>
+
+              <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                {post.title}
+              </h1>
+
+              <div className="text-xl text-gray-500 mb-8 border-l-4 border-indigo-500 pl-4 italic">
+                {post.summary}
+              </div>
+
+              <div 
+                className="prose prose-lg prose-indigo max-w-none text-gray-700"
+                dangerouslySetInnerHTML={{ __html: post.content }}
               />
             </div>
-          )}
-          
-          <div className="p-8 md:p-12">
-            <div className="flex items-center text-sm text-indigo-600 font-medium mb-4">
-              <Calendar className="h-4 w-4 mr-2" />
-              {new Date(post.created_at || '').toLocaleDateString('es-ES', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </div>
-
-            <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-              {post.title}
-            </h1>
-
-            <div className="text-xl text-gray-500 mb-8 border-l-4 border-indigo-500 pl-4 italic">
-              {post.summary}
-            </div>
-
-            <div 
-              className="prose prose-lg prose-indigo max-w-none text-gray-700"
-              dangerouslySetInnerHTML={{ __html: post.content }}
-            />
           </div>
-        </div>
-      </article>
-    </div>
+        </article>
+      </div>
+    </>
   );
 };
