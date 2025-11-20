@@ -8,16 +8,16 @@ export const About: React.FC = () => {
         {/* Intro */}
         <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center mb-20">
           <div className="mb-10 lg:mb-0">
-            <img 
-              src="https://blogger.googleusercontent.com/img/a/AVvXsEiYlPAHclKJ46tEh_S-LYm1kjoQmeDrlRZpxMie4i_FGORKmgkODHlZkwEDh5to9g9CTb9jXP_gShYArEhZUBOmw5W8m-3smlj60N6hTX477Z38XMcgraCpG7MiAPd8Ekcy0gzR8m-3smlj60N6hTX477Z38XMcgraCpG7MiAPd8Ekcy0gzR8k0A2DfH4oY5lnvIL5z6Kf3MbXlMCig5WGt7LLtqECbdjO0ZTD9vBg" 
-              alt="Joaquín, desarrollador web" // Considera reemplazar esta imagen con una foto personal de Joaquín
+            <img
+              src="/images/joaquin.png"
+              alt="Joaquín, desarrollador web"
               className="rounded-xl shadow-xl w-full object-cover h-96"
             />
           </div>
           <div>
             <h1 className="text-4xl font-bold text-gray-900 mb-6">Sobre Mí</h1>
             <p className="text-lg text-gray-600 mb-6">
-              Hola, soy Joaquín, un desarrollador web apasionado con más de 10 años de experiencia transformando ideas en soluciones digitales robustas y atractivas. Me dedico a democratizar el acceso a tecnología de alta calidad para empresas y proyectos de todos los tamaños.
+              Hola, soy Joaquín, un desarrollador web apasionado con más de 20 años de experiencia transformando ideas en soluciones digitales robustas y atractivas. Me dedico a democratizar el acceso a tecnología de alta calidad para empresas y proyectos de todos los tamaños.
             </p>
             <p className="text-lg text-gray-600 mb-6">
               Creo que un sitio web no es solo una tarjeta de presentación, es una herramienta de crecimiento. Mi enfoque combina creatividad artística con ingeniería robusta para ofrecer resultados excepcionales.
