@@ -33,24 +33,46 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
   const [activeModal, setActiveModal] = useState<'link' | 'image' | null>(null);
   const [savedRange, setSavedRange] = useState<Range | null>(null);
   const [showSource, setShowSource] = useState(false);
-  
+
   // --- Estados de los Modales ---
   const [linkData, setLinkData] = useState<LinkData>({ url: '', text: '', title: '', openInNewTab: true });
   const [imageData, setImageData] = useState<ImageData>({ src: '', alt: '', title: '', width: '100%' });
   const [uploading, setUploading] = useState(false);
+  const [currentImg, setCurrentImg] = useState<HTMLImageElement | null>(null);
 
   // Sincronizar contenido inicial (solo si no estamos viendo el código fuente)
   useEffect(() => {
+    // Forzar la actualización del innerHTML cuando el valor de la prop cambie
+    // y no coincida con el contenido actual del editor.
+    // Esto es crucial para renderizar el HTML inyectado programáticamente (ej: desde Gemini).
     if (!showSource && editorRef.current && editorRef.current.innerHTML !== value) {
-      // Solo actualizar si está vacío o es drásticamente diferente para evitar saltos de cursor
-      if (editorRef.current.innerHTML === '' || value === '') {
-          editorRef.current.innerHTML = value;
-      } else if (document.activeElement !== editorRef.current) {
-          // Si no tenemos el foco, actualizamos para reflejar cambios externos
-          editorRef.current.innerHTML = value;
-      }
+      editorRef.current.innerHTML = value;
     }
   }, [value, showSource]);
+
+  // Event listener para clicks en imágenes dentro del editor
+  useEffect(() => {
+    if (editorRef.current) {
+      const handleClick = (e: MouseEvent) => {
+        if (showSource) return;
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'IMG') {
+          e.preventDefault();
+          const img = target as HTMLImageElement;
+          setCurrentImg(img);
+          setImageData({
+            src: img.src,
+            alt: img.alt || '',
+            title: img.title || '',
+            width: getComputedStyle(img).width
+          });
+          setActiveModal('image');
+        }
+      };
+      editorRef.current.addEventListener('click', handleClick);
+      return () => editorRef.current?.removeEventListener('click', handleClick);
+    }
+  }, [showSource]);
 
   // Manejar cambios en el editor visual
   const handleInput = () => {
@@ -90,6 +112,16 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
 
   const handleUndo = () => {
     execCommand('undo');
+  };
+
+  // Insertar bloque de código con estilo personalizado
+  const insertCodeBlock = () => {
+    if (showSource) return;
+    saveSelection();
+    const html = '<pre class="bg-gray-900 text-green-400 p-4 rounded overflow-x-auto font-mono code-block"><code>Inicia tu código aquí</code></pre>';
+    document.execCommand('insertHTML', false, html);
+    setTimeout(() => editorRef.current?.focus(), 0);
+    handleInput();
   };
 
   // --- Lógica de Enlaces ---
@@ -165,6 +197,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
   };
 
   const insertImage = () => {
+    if (currentImg) {
+      // Editar imagen existente
+      currentImg.src = imageData.src;
+      currentImg.alt = imageData.alt;
+      currentImg.title = imageData.title;
+      if (imageData.width) currentImg.style.width = imageData.width;
+      setCurrentImg(null);
+      handleInput();
+      closeModal();
+      return;
+    }
+
+    // Insertar nueva imagen
     restoreSelection();
     if (!savedRange) return;
 
@@ -179,7 +224,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
     savedRange.insertNode(img);
     // Mover el cursor después de la imagen
     savedRange.collapse(false);
-    
+
     handleInput();
     closeModal();
   };
@@ -208,9 +253,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
 
   return (
     <div className="relative border border-gray-300 rounded-lg bg-white shadow-sm flex flex-col">
-      
+
       {/* Barra de Herramientas */}
-      <div className="flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg sticky top-0 z-10">
+      <div className="fixed top-16 left-0 right-0 z-60 flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
         <ToolbarButton onClick={handleUndo} icon={Undo} title="Deshacer" disabled={showSource} />
         <div className="w-px h-6 bg-gray-300 mx-1" />
         
@@ -264,8 +309,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
 
       {/* --- MODAL DE ENLACE --- */}
       {activeModal === 'link' && (
-        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4 rounded-lg">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/50 z-60 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md animate-in fade-in zoom-in duration-200 mt-32">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-gray-900">Insertar Enlace SEO</h3>
               <button onClick={closeModal} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5"/></button>
@@ -333,7 +378,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
 
       {/* --- MODAL DE IMAGEN --- */}
       {activeModal === 'image' && (
-        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4 rounded-lg">
+        <div className="fixed inset-0 bg-black/50 z-60 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-gray-900">Insertar Imagen SEO</h3>
@@ -397,13 +442,32 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange 
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Title (Tooltip)</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
                   placeholder="Título visible al pasar el mouse"
                   value={imageData.title}
                   onChange={e => setImageData({...imageData, title: e.target.value})}
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tamaño de la Imagen</label>
+                <select
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-gray-900"
+                  value={imageData.width}
+                  onChange={e => setImageData({...imageData, width: e.target.value})}
+                >
+                  <option value="100%">100% (ancho completo)</option>
+                  <option value="75%">75%</option>
+                  <option value="50%">50% (mitad)</option>
+                  <option value="25%">25% (cuarto)</option>
+                  <option value="auto">Auto (tamaño original)</option>
+                  <option value="200px">200px fijo</option>
+                  <option value="300px">300px fijo</option>
+                  <option value="400px">400px fijo</option>
+                  <option value="600px">600px fijo</option>
+                </select>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">

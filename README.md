@@ -80,3 +80,31 @@ Para que el mundo vea tu web:
 
 2.  **Configurar GitHub Pages:** Ve a Settings -> Pages, selecciona "Deploy from a branch" como source, luego elige la rama `gh-pages` y carpeta `/(root)`.
 
+---
+
+## 5. Configuración del Asistente de IA (Gemini)
+
+Para que el asistente de IA en el panel de administración funcione, necesitas una clave de API de Google Gemini.
+
+### A. Para Entorno Local
+
+1.  **Crea un archivo `.env`:** En la raíz de tu proyecto, crea un archivo llamado `.env`.
+2.  **Añade tu clave de API:** Dentro del archivo `.env`, añade la siguiente línea, reemplazando `TU_API_KEY_DE_GEMINI` con tu clave real:
+    ```
+    VITE_GEMINI_API_KEY=TU_API_KEY_DE_GEMINI
+    ```
+3.  **Añade `.env` a `.gitignore`:** Para evitar subir tu clave secreta a GitHub, asegúrate de que tu archivo `.gitignore` contenga la línea:
+    ```
+    .env
+    ```
+
+### B. Para GitHub (Despliegue)
+
+1.  **Ve a tu repositorio en GitHub.**
+2.  Haz clic en la pestaña **Settings** (Configuración).
+3.  En el menú de la izquierda, ve a **Secrets and variables** > **Actions**.
+4.  Haz clic en el botón **New repository secret**.
+5.  **Nombre del secreto:** `VITE_GEMINI_API_KEY`
+6.  **Valor del secreto:** Pega aquí tu clave de API de Gemini.
+7.  Haz clic en **Add secret**.
+

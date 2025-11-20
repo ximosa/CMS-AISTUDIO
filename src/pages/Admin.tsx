@@ -5,6 +5,7 @@ import { BlogPost } from '../types';
 import { PlusCircle, AlertCircle, CheckCircle, Image as ImageIcon, Edit, Trash2, RotateCcw, LogOut, X, ExternalLink, Link as LinkIcon, Database } from 'lucide-react';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { CloudinaryUploadWidget } from '../components/CloudinaryUploadWidget';
+import { GeminiAssistant } from '../components/GeminiAssistant';
 
 export const Admin: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export const Admin: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [geminiApiKey, setGeminiApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || '');
   
   const [post, setPost] = useState<BlogPost>({
     title: '',
@@ -74,8 +76,8 @@ export const Admin: React.FC = () => {
     return text
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '') // Eliminar caracteres especiales
-      .replace(/[\s_-]+/g, '-') // Reemplazar espacios con guiones
+      .replace(/[^\\w\\s-]/g, '') // Eliminar caracteres especiales
+      .replace(/[\\s_-]+/g, '-') // Reemplazar espacios con guiones
       .replace(/^-+|-+$/g, ''); // Eliminar guiones al principio y final
   };
 
@@ -100,6 +102,13 @@ export const Admin: React.FC = () => {
       ...post,
       content: newContent
     });
+  };
+
+  const handleGeneratedContent = (newContent: string) => {
+    setPost(prev => ({
+      ...prev,
+      content: prev.content + newContent
+    }));
   };
 
   const handleImageUploaded = (url: string) => {
@@ -161,7 +170,7 @@ export const Admin: React.FC = () => {
       
     } catch (error: any) {
       console.error("Error eliminando:", error);
-      alert(`Error eliminando: ${error.message}. \n\nIMPORTANTE: Ve al README y ejecuta el script SQL completo en Supabase.`);
+      alert(`Error eliminando: ${error.message}. \\n\\nIMPORTANTE: Ve al README y ejecuta el script SQL completo en Supabase.`);
       setStatus('error');
       setMessage('Error al eliminar.');
       fetchPosts(); // Recargar para asegurar consistencia
@@ -173,8 +182,19 @@ export const Admin: React.FC = () => {
     setStatus('loading');
     setMessage('');
 
-    // Validación básica de slug
+    // Generar slug si está vacío
     const finalSlug = post.slug || generateSlug(post.title);
+
+    // Validar que se pueda generar un slug
+    if (!finalSlug) {
+      setStatus('error');
+      setMessage('No se puede generar un slug. Asegúrate de que el título no esté vacío.');
+      return;
+    }
+
+    // Actualizar el estado para mostrar el slug generado en el input
+    setPost(prev => ({ ...prev, slug: finalSlug }));
+
     const payload = { ...post, slug: finalSlug };
 
     try {
@@ -213,7 +233,7 @@ export const Admin: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-12">
+    <div className="bg-gray-50 min-h-screen py-12 pb-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -250,8 +270,10 @@ export const Admin: React.FC = () => {
           </div>
         </div>
 
+
+
         <div className="grid lg:grid-cols-3 gap-8">
-          
+
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
               <div className={`px-8 py-6 ${isEditing ? 'bg-amber-600' : 'bg-indigo-900'} transition-colors`}>
@@ -309,11 +331,10 @@ export const Admin: React.FC = () => {
                       name="slug"
                       value={post.slug}
                       onChange={handleChange}
-                      required
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none bg-gray-50 text-gray-600 font-mono text-sm"
                       placeholder="ej: 5-tendencias-diseno-web"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Se genera automáticamente del título, pero puedes editarlo. Debe ser único.</p>
+                    <p className="text-xs text-gray-500 mt-1">Se genera automáticamente del título, pero puedes editarlo. Debe ser único si se especifica.</p>
                   </div>
 
                   <div>
@@ -373,33 +394,24 @@ export const Admin: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Contenido del Artículo</label>
                     <RichTextEditor value={post.content} onChange={handleContentChange} />
                   </div>
-
-                  <div className="pt-4 flex gap-4">
-                    <button
-                      type="submit"
-                      disabled={status === 'loading'}
-                      className={`flex-1 text-white font-bold py-3 px-4 rounded-md shadow-md disabled:opacity-50 flex justify-center items-center transition-colors ${isEditing ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
-                    >
-                      {status === 'loading' ? 'Guardando...' : (isEditing ? 'Actualizar Artículo' : 'Publicar Artículo')}
-                    </button>
-                    
-                    {isEditing && (
-                      <button
-                        type="button"
-                        onClick={handleCancelEdit}
-                        className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300 transition-colors flex items-center"
-                      >
-                        <RotateCcw className="w-4 h-4 mr-2" /> Cancelar
-                      </button>
-                    )}
-                  </div>
                 </form>
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden sticky top-24 border border-gray-200 flex flex-col h-[calc(100vh-8rem)]">
+            {/* Botón de publicar no flotante */}
+            <div className="sticky bg-white rounded-xl shadow-lg p-4 mb-4 border border-gray-200">
+              <button
+                onClick={handleSubmit}
+                disabled={status === 'loading'}
+                className="w-full text-white font-bold py-3 px-4 rounded-md shadow-md disabled:opacity-50 transition-colors flex justify-center items-center bg-green-600 hover:bg-green-700"
+              >
+                {status === 'loading' ? 'Guardando...' : (isEditing ? 'Actualizar Artículo' : 'Publicar Artículo')}
+              </button>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 flex flex-col h-[calc(100vh-8rem)]">
               <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                 <h2 className="font-bold text-gray-700">Artículos ({existingPosts.length})</h2>
               </div>
@@ -440,6 +452,35 @@ export const Admin: React.FC = () => {
             </div>
           </div>
 
+        </div>
+
+        {/* Barra fija inferior con asistente IA y botones */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-md hover:bg-gray-300 transition-colors flex items-center"
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" /> Cancelar
+                  </button>
+                )}
+                <div className="flex-1 max-w-md">
+                  <GeminiAssistant apiKey={geminiApiKey} onGeneratedContent={handleGeneratedContent} />
+                </div>
+              </div>
+              <button
+                onClick={handleSubmit}
+                disabled={status === 'loading'}
+                className={`text-white font-bold py-3 px-6 rounded-md shadow-md disabled:opacity-50 flex justify-center items-center transition-colors ${isEditing ? 'bg-amber-600 hover:bg-amber-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+              >
+                {status === 'loading' ? 'Guardando...' : (isEditing ? 'Actualizar Artículo' : 'Publicar Artículo')}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
