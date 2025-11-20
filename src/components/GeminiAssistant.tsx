@@ -35,8 +35,9 @@ export const GeminiAssistant: React.FC<GeminiAssistantProps> = ({ onGeneratedCon
       1.  **SOLO HTML:** Tu respuesta DEBE ser únicamente un fragmento de código HTML.
       2.  **NO MARKDOWN:** No uses NUNCA la sintaxis de Markdown. No escribas \`\`\`html ni \`\`\`. La respuesta debe empezar directamente con una etiqueta HTML como <h2>.
       3.  **ESTRUCTURA SEO:** Usa <h2> para títulos principales y <h3> o <h4> para subtítulos. Es obligatorio para el SEO.
-      4.  **ETIQUETAS PERMITIDAS:** Solo puedes usar estas etiquetas: <h2>, <h3>, <h4>, <p>, <ul>, <li>, <code>, <strong>, <em>.
-      5.  **RESPUESTA LIMPIA:** NO incluyas <html>, <head>, <body>, o <!DOCTYPE>.
+      4.  **ETIQUETAS PERMITIDAS:** Solo puedes usar estas etiquetas: <h2>, <h3>, <h4>, <p>, <ul>, <li>, <pre>, <code>, <strong>, <em>.
+      5.  **BLOQUES DE CÓDIGO:** Si generas código, DEBES envolverlo SIEMPRE en <pre><code>...</code></pre>. NUNCA uses solo <code> para bloques de varias líneas.
+      6.  **RESPUESTA LIMPIA:** NO incluyas <html>, <head>, <body>, o <!DOCTYPE>.
 
       **Ejemplo de respuesta CORRECTA:**
       <h2>Este es un Título Principal</h2>
