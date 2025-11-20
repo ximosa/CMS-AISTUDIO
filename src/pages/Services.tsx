@@ -2,14 +2,14 @@ import React from 'react';
 import { Code, ShoppingCart, Database, BarChart, Smartphone, Globe } from 'lucide-react';
 
 const ServiceCard: React.FC<{ title: string; description: string; icon: React.ReactNode }> = ({ title, description, icon }) => (
-  <div className="bg-white rounded-xl p-8 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-    <div className="w-14 h-14 bg-indigo-50 rounded-full flex items-center justify-center mb-6 group-hover:bg-indigo-600 transition-colors duration-300">
-      <div className="text-indigo-600 group-hover:text-white transition-colors duration-300">
+  <div className="bg-white dark:bg-slate-800 rounded-xl p-8 shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-lg transition-all duration-300 group">
+    <div className="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-6 group-hover:bg-indigo-600 dark:group-hover:bg-indigo-600 transition-colors duration-300">
+      <div className="text-indigo-600 dark:text-indigo-400 group-hover:text-white transition-colors duration-300">
         {icon}
       </div>
     </div>
-    <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
-    <p className="text-gray-600 leading-relaxed">{description}</p>
+    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{title}</h3>
+    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{description}</p>
   </div>
 );
 
@@ -52,13 +52,13 @@ export const Services: React.FC = () => {
       <title>Servicios de Desarrollo Web | Joaquín</title>
       <meta name="description" content="Ofrezco servicios de desarrollo web a medida, e-commerce, backend, SEO, y más. Soluciones tecnológicas para impulsar tu negocio." />
 
-      <div className="bg-slate-50 min-h-screen py-12">
+      <div className="bg-slate-50 dark:bg-slate-900 min-h-screen py-12 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl mb-4">
               Mis Servicios
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Ofrezco soluciones tecnológicas integrales para impulsar tu proyecto en el mundo digital.
             </p>
           </div>

@@ -74,11 +74,33 @@ Sigue estos pasos para trabajar en tu ordenador:
 
 ## 4. Cómo desplegar en GitHub Pages (GRATIS)
 
-Para que el mundo vea tu web:
+### Configuración Inicial (Solo una vez)
 
-1.  **Crear Repositorio:** Crea un repo en GitHub y sube este código. Para despliegue gratuito, el repo debe ser **público**. Si necesitas mantenerlo privado, ver las instrucciones abajo.
+1.  **Crear Repositorio:** Crea un repo en GitHub y sube este código. Para despliegue gratuito, el repo debe ser **público**.
 
 2.  **Configurar GitHub Pages:** Ve a Settings -> Pages, selecciona "Deploy from a branch" como source, luego elige la rama `gh-pages` y carpeta `/(root)`.
+
+### Publicar Cambios (Cada vez que actualices)
+
+Cada vez que hagas cambios en tu código y quieras publicarlos en GitHub Pages:
+
+1.  **En la terminal del proyecto, ejecuta:**
+    ```bash
+    npm run deploy
+    ```
+    Este comando compila tu proyecto y lo sube automáticamente a GitHub Pages.
+
+2.  **Espera 2-3 minutos** para que GitHub Pages procese los cambios.
+
+3.  **Abre tu página en el navegador:**
+    - URL: https://ximosa.github.io/CMS-AISTUDIO/
+
+4.  **Haz un hard refresh para ver los cambios:**
+    - **Windows/Linux:** Presiona `Ctrl + F5` o `Ctrl + Shift + R`
+    - **Mac:** Presiona `Cmd + Shift + R`
+    - **Alternativa:** Abre en modo incógnito (`Ctrl + Shift + N`)
+
+> **💡 Importante:** Si después del deploy ves la versión antigua de tu página, es porque tu navegador tiene la página guardada en caché. Simplemente presiona `Ctrl + F5` en el navegador para recargar sin caché y verás la versión actualizada.
 
 ---
 
@@ -121,4 +143,3 @@ Para que el asistente de IA en el panel de administración funcione, necesitas u
 5.  **Nombre del secreto:** `VITE_GEMINI_API_KEY`
 6.  **Valor del secreto:** Pega aquí tu clave de API de Gemini.
 7.  Haz clic en **Add secret**.
-

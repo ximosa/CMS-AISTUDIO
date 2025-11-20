@@ -21,8 +21,8 @@ export const Home: React.FC = () => {
       <title>Desarrollo Web a Medida | Joaquín</title>
       <meta name="description" content="Desarrollador web experto en la creación de sitios y aplicaciones web a medida, rápidos y optimizados para SEO. Transforma tu idea en una realidad digital." />
       <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
-      
-      <div className="bg-slate-50">
+
+      <div className="bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
         {/* Hero Section */}
         <section className="relative bg-indigo-900 text-white overflow-hidden">
           <div className="absolute inset-0 bg-[url('https://picsum.photos/1920/1080?blur=2')] opacity-20 bg-cover bg-center"></div>
@@ -56,36 +56,36 @@ export const Home: React.FC = () => {
         {/* Features Preview */}
         <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">¿Por qué elegir mi trabajo?</h2>
-            <p className="mt-4 text-lg text-gray-600">Combino diseño, tecnología y estrategia para ofrecerte la mejor solución.</p>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">¿Por qué elegir mi trabajo?</h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">Combino diseño, tecnología y estrategia para ofrecerte la mejor solución.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
-                <Monitor className="text-indigo-600 h-6 w-6" />
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="bg-indigo-100 dark:bg-indigo-900/30 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
+                <Monitor className="text-indigo-600 dark:text-indigo-400 h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">Diseño Responsivo</h3>
-              <p className="text-gray-600">Tu sitio web se verá perfecto en cualquier dispositivo, desde móviles hasta pantallas gigantes.</p>
+              <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">Diseño Responsivo</h3>
+              <p className="text-gray-600 dark:text-gray-300">Tu sitio web se verá perfecto en cualquier dispositivo, desde móviles hasta pantallas gigantes.</p>
             </div>
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
-                <Smartphone className="text-indigo-600 h-6 w-6" />
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="bg-indigo-100 dark:bg-indigo-900/30 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
+                <Smartphone className="text-indigo-600 dark:text-indigo-400 h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">Aplicaciones Web</h3>
-              <p className="text-gray-600">Desarrollo aplicaciones web complejas y PWAs que funcionan como software nativo.</p>
+              <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">Aplicaciones Web</h3>
+              <p className="text-gray-600 dark:text-gray-300">Desarrollo aplicaciones web complejas y PWAs que funcionan como software nativo.</p>
             </div>
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
-                <Search className="text-indigo-600 h-6 w-6" />
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="bg-indigo-100 dark:bg-indigo-900/30 w-12 h-12 rounded-lg flex items-center justify-center mb-6">
+                <Search className="text-indigo-600 dark:text-indigo-400 h-6 w-6" />
               </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-900">SEO Optimizado</h3>
-              <p className="text-gray-600">Código limpio y estructurado para que los motores de búsqueda adoren tu sitio web.</p>
+              <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white">SEO Optimizado</h3>
+              <p className="text-gray-600 dark:text-gray-300">Código limpio y estructurado para que los motores de búsqueda adoren tu sitio web.</p>
             </div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="bg-gray-900 py-16">
+        <section className="bg-gray-900 dark:bg-black py-16 transition-colors duration-300">
           <div className="max-w-4xl mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold text-white mb-6">¿Listo para llevar tu negocio al siguiente nivel?</h2>
             <p className="text-indigo-200 mb-8 text-lg">Contáctame hoy mismo para una consulta gratuita y descubre cómo puedo ayudarte.</p>

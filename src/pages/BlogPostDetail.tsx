@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 import { BlogPost } from '../types';
 import { Calendar, ArrowLeft, Loader2, AlertTriangle, Edit, Trash2 } from 'lucide-react';
 import { TableOfContents } from '../components/TableOfContents';
+import { Comments } from '../components/Comments';
 
 export const BlogPostDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -66,23 +67,23 @@ export const BlogPostDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-slate-50">
-        <Loader2 className="h-10 w-10 text-indigo-600 animate-spin" />
+      <div className="flex justify-center items-center min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+        <Loader2 className="h-10 w-10 text-indigo-600 dark:text-indigo-400 animate-spin" />
       </div>
     );
   }
 
   if (error || !post) {
     return (
-      <div className="min-h-screen bg-slate-50 py-12 px-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-12 px-4 transition-colors duration-300">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-8 inline-block mb-6">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
-            <p className="text-gray-600">{error || 'Artículo no encontrado'}</p>
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-8 inline-block mb-6">
+            <AlertTriangle className="h-12 w-12 text-red-500 dark:text-red-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Error</h2>
+            <p className="text-gray-600 dark:text-gray-300">{error || 'Artículo no encontrado'}</p>
           </div>
           <div>
-            <Link to="/blog" className="text-indigo-600 font-semibold hover:text-indigo-800 flex items-center justify-center">
+            <Link to="/blog" className="text-indigo-600 dark:text-indigo-400 font-semibold hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center justify-center">
               <ArrowLeft className="mr-2 h-5 w-5" /> Volver al Blog
             </Link>
           </div>
@@ -115,11 +116,11 @@ export const BlogPostDetail: React.FC = () => {
       <meta name="description" content={post.summary} />
       <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
 
-      <div className="bg-slate-50 min-h-screen py-12">
+      <div className="bg-slate-50 dark:bg-slate-900 min-h-screen py-12 transition-colors duration-300">
         <TableOfContents content={post.content} />
         <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
-            <Link to="/blog" className="inline-flex items-center text-gray-600 hover:text-indigo-600 transition-colors">
+            <Link to="/blog" className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
               <ArrowLeft className="mr-2 h-4 w-4" /> Volver al listado
             </Link>
 
@@ -141,7 +142,7 @@ export const BlogPostDetail: React.FC = () => {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg overflow-hidden transition-colors duration-300">
             {post.image_url && (
               <div className="w-full h-64 md:h-96 overflow-hidden">
                 <img
@@ -153,7 +154,7 @@ export const BlogPostDetail: React.FC = () => {
             )}
 
             <div className="p-8 md:p-12">
-              <div className="flex items-center text-sm text-indigo-600 font-medium mb-4">
+              <div className="flex items-center text-sm text-indigo-600 dark:text-indigo-400 font-medium mb-4">
                 <Calendar className="h-4 w-4 mr-2" />
                 {new Date(post.created_at || '').toLocaleDateString('es-ES', {
                   weekday: 'long',
@@ -163,20 +164,23 @@ export const BlogPostDetail: React.FC = () => {
                 })}
               </div>
 
-              <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
                 {post.title}
               </h1>
 
-              <div className="text-xl text-gray-500 mb-8 border-l-4 border-indigo-500 pl-4 italic">
+              <div className="text-xl text-gray-500 dark:text-gray-400 mb-8 border-l-4 border-indigo-500 pl-4 italic">
                 {post.summary}
               </div>
 
               <div
                 id="article-content"
-                className="prose prose-lg prose-indigo max-w-none text-gray-700"
+                className="prose prose-lg prose-indigo dark:prose-invert max-w-none text-gray-700 dark:text-gray-300"
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
             </div>
+          </div>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Comments postId={post.id!} />
           </div>
         </article>
       </div>

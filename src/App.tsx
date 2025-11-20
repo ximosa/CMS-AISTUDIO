@@ -8,7 +8,9 @@ import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Blog } from './pages/Blog';
 import { BlogPostDetail } from './pages/BlogPostDetail';
+import { Projects } from './pages/Projects';
 import { Admin } from './pages/Admin';
+import { Comments } from './pages/Comments';
 import { Login } from './pages/Login';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -28,7 +30,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <ScrollToTop />
-      <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900">
+      <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
         <Navbar />
         <main className="flex-grow pt-16">
           <Routes>
@@ -38,12 +40,21 @@ const App: React.FC = () => {
             <Route path="/contacto" element={<Contact />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPostDetail />} />
+            <Route path="/proyectos" element={<Projects />} />
             <Route path="/login" element={<Login />} />
             <Route
               path="/admin"
               element={
                 <ProtectedRoute>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/comments"
+              element={
+                <ProtectedRoute>
+                  <Comments />
                 </ProtectedRoute>
               }
             />
