@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
@@ -28,9 +28,9 @@ const ScrollToTop = () => {
 
 const App: React.FC = () => {
   console.log('App component rendered');
-  const Router = import.meta.env.MODE === 'production' ? HashRouter : BrowserRouter;
+
   return (
-    <Router>
+    <BrowserRouter>
       <ScrollToTop />
       <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
         <Navbar />
@@ -66,7 +66,7 @@ const App: React.FC = () => {
         </main>
         <Footer />
       </div>
-    </Router>
+    </BrowserRouter>
   );
 };
 
