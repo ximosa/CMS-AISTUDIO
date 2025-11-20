@@ -1,4 +1,5 @@
 import React from 'react';
+import joaquinImage from '/images/joaquin.png';
 
 export const About: React.FC = () => {
   return (
@@ -9,7 +10,7 @@ export const About: React.FC = () => {
         <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center mb-20">
           <div className="mb-10 lg:mb-0">
             <img
-              src="/images/joaquin.png"
+              src={joaquinImage}
               alt="Joaquín, desarrollador web"
               className="rounded-xl shadow-xl w-full object-cover h-96"
             />
