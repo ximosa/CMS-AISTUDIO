@@ -9,6 +9,7 @@ import { Contact } from './pages/Contact';
 import { Blog } from './pages/Blog';
 import { BlogPostDetail } from './pages/BlogPostDetail';
 import { Projects } from './pages/Projects';
+import { WordPressExpert } from './pages/WordPressExpert';
 import { Admin } from './pages/Admin';
 import { Comments } from './pages/Comments';
 import { Login } from './pages/Login';
@@ -41,6 +42,7 @@ const App: React.FC = () => {
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPostDetail />} />
             <Route path="/proyectos" element={<Projects />} />
+            <Route path="/wordpress-expert" element={<WordPressExpert />} />
             <Route path="/login" element={<Login />} />
             <Route
               path="/admin"

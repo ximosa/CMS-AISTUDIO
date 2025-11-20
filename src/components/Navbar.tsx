@@ -13,6 +13,7 @@ export const Navbar: React.FC = () => {
   const dropdownLinks = [
     { name: 'Servicios', path: '/servicios' },
     { name: 'Proyectos', path: '/proyectos' },
+    { name: 'Experto WordPress', path: '/wordpress-expert' },
     { name: 'Sobre Mí', path: '/sobre-mi' },
   ];
 
