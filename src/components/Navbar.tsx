@@ -14,6 +14,7 @@ export const Navbar: React.FC = () => {
     { name: 'Servicios', path: '/servicios' },
     { name: 'Proyectos', path: '/proyectos' },
     { name: 'Experto WordPress', path: '/wordpress-expert' },
+    { name: 'Reparamos Web', path: '/reparamos-web' },
     { name: 'Sobre Mí', path: '/sobre-mi' },
   ];
 
