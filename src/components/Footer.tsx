@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Github, Twitter, Linkedin, Mail } from 'lucide-react';
+import { Github, Twitter, Mail, Lock } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -8,7 +8,7 @@ export const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-2xl font-bold text-indigo-400 mb-4">DevAgency</h3>
+            <h3 className="text-2xl font-bold text-indigo-400 mb-4">DevWebgae</h3>
             <p className="text-gray-400">
               Transformando ideas en experiencias digitales excepcionales.
               Desarrollo web de alto nivel para tu negocio.
@@ -19,18 +19,21 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li><Link to="/" className="text-gray-400 hover:text-white transition">Inicio</Link></li>
               <li><Link to="/servicios" className="text-gray-400 hover:text-white transition">Servicios</Link></li>
+              <li><Link to="/proyectos" className="text-gray-400 hover:text-white transition">Proyectos</Link></li>
+              <li><Link to="/sobre-mi" className="text-gray-400 hover:text-white transition">Sobre Mí</Link></li>
+              <li><Link to="/wordpress-expert" className="text-gray-400 hover:text-white transition">Experto WordPress</Link></li>
+              <li><Link to="/reparamos-web" className="text-gray-400 hover:text-white transition">Reparamos Web</Link></li>
               <li><Link to="/blog" className="text-gray-400 hover:text-white transition">Blog</Link></li>
               <li><Link to="/contacto" className="text-gray-400 hover:text-white transition">Contacto</Link></li>
-              <li><Link to="/admin" className="text-gray-600 hover:text-gray-400 transition text-sm mt-4 block">Admin (Acceso)</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="text-lg font-semibold mb-4">Síguenos</h4>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-indigo-400 transition"><Github size={24} /></a>
-              <a href="#" className="text-gray-400 hover:text-indigo-400 transition"><Twitter size={24} /></a>
-              <a href="#" className="text-gray-400 hover:text-indigo-400 transition"><Linkedin size={24} /></a>
-              <a href="mailto:info@devagency.com" className="text-gray-400 hover:text-indigo-400 transition"><Mail size={24} /></a>
+              <a href="https://github.com/ximosa" className="text-gray-400 hover:text-indigo-400 transition"><Github size={24} /></a>
+              <a href="https://x.com/RedXimo" className="text-gray-400 hover:text-indigo-400 transition"><Twitter size={24} /></a>
+              <a href="mailto:ximosa@gmail.com" className="text-gray-400 hover:text-indigo-400 transition"><Mail size={24} /></a>
+              <Link to="/admin" className="text-gray-400 hover:text-indigo-400 transition" aria-label="Admin Access"><Lock size={24} /></Link>
             </div>
           </div>
         </div>
